@@ -176,9 +176,69 @@ class UaaSyncTask {
         }
       }
       
-      // Step 4: 同步小说基本信息
+      // Step 4: 验证音频可用性（防止同步空壳小说）
+      this.updateProgress('验证音频', 25);
+      console.log(`[UAA-Task ${this.id}] 📍 步骤4: 验证音频可用性`);
+      
+      // 准备章节数据
+      let episodes = detailData.episodes || [];
+      const totalEpisodes = episodes.length;
+      console.log(`[UAA-Task ${this.id}]   初始章节数: ${totalEpisodes}`);
+      console.log(`[UAA-Task ${this.id}]   audioUrls 数量: ${detailData.audioUrls ? detailData.audioUrls.length : 0}`);
+      
+      // 如果没有章节列表，但有音频URL，创建虚拟章节
+      if (totalEpisodes === 0 && detailData.audioUrls && detailData.audioUrls.length > 0) {
+        console.log(`[UAA-Task ${this.id}] 没有章节列表，创建虚拟章节`);
+        
+        episodes = detailData.audioUrls.map((audioUrl, index) => {
+          let chapterId = `audio_${audioId}_${index + 1}`;
+          const audioIdMatch = audioUrl.match(/\/audio\/(\d+)\.mp3/);
+          if (audioIdMatch) {
+            chapterId = audioIdMatch[1];
+          }
+          
+          return {
+            id: chapterId,
+            index: index + 1,
+            title: index === 0 ? detailData.title : `${detailData.title} - 第${index + 1}集`,
+            audioUrl: audioUrl,
+            contents: '',
+            duration: 0
+          };
+        });
+        
+        console.log(`[UAA-Task ${this.id}] 创建了 ${episodes.length} 个虚拟章节`);
+      }
+      
+      const finalEpisodeCount = episodes.length;
+      console.log(`[UAA-Task ${this.id}]   最终章节数: ${finalEpisodeCount}`);
+      
+      if (finalEpisodeCount === 0) {
+        throw new Error('没有章节也没有音频URL，无法同步');
+      }
+      
+      // ✅ 关键：验证第一个章节的音频是否可下载
+      const firstEpisode = episodes[0];
+      const firstAudioUrl = firstEpisode.audioUrl;
+      
+      if (!firstAudioUrl) {
+        throw new Error('第一个章节没有音频URL');
+      }
+      
+      console.log(`[UAA-Task ${this.id}]   测试下载: ${firstAudioUrl}`);
+      try {
+        const audioDownloader = new AudioDownloader(this.config);
+        const testBuffer = await audioDownloader.downloadAudio(firstAudioUrl, () => {});
+        console.log(`[UAA-Task ${this.id}]   ✅ 音频验证成功 (${(testBuffer.length / 1024 / 1024).toFixed(2)} MB)`);
+      } catch (error) {
+        const errorMsg = `音频不可用，取消同步: ${error.message}`;
+        console.error(`[UAA-Task ${this.id}]   ❌ ${errorMsg}`);
+        throw new Error(errorMsg);
+      }
+      
+      // Step 5: 同步小说基本信息（音频已验证可用）
       this.updateProgress('同步小说信息', 30);
-      console.log(`[UAA-Task ${this.id}] 📍 步骤4: 同步小说基本信息`);
+      console.log(`[UAA-Task ${this.id}] 📍 步骤5: 同步小说基本信息`);
       
       // ✅ 生成唯一的分类 source_id，格式：uaa_{题材名称}
       const categoryName = this.item.category || detailData.category || '全部有声';
@@ -244,49 +304,8 @@ class UaaSyncTask {
       const novelId = syncResult.novel_id;
       console.log(`[UAA-Task ${this.id}] 小说同步成功: novel_id=${novelId}, is_new=${syncResult.is_new}`);
       
-      // Step 5: 同步章节
-      let episodes = detailData.episodes || [];
-      const totalEpisodes = episodes.length;
-      
-      // 如果没有章节列表，但有音频URL，创建一个虚拟章节
-      if (totalEpisodes === 0 && detailData.audioUrls && detailData.audioUrls.length > 0) {
-        console.log(`[UAA-Task ${this.id}] 没有章节列表，但有音频URL，创建虚拟章节`);
-        
-        // 从 audioUrls 创建章节
-        episodes = detailData.audioUrls.map((audioUrl, index) => ({
-          id: `audio_${audioId}_${index + 1}`,
-          index: index + 1,
-          title: index === 0 ? detailData.title : `${detailData.title} - 第${index + 1}集`,
-          audioUrl: audioUrl,
-          contents: '',
-          duration: 0
-        }));
-        
-        console.log(`[UAA-Task ${this.id}] 创建了 ${episodes.length} 个虚拟章节`);
-      }
-      
-      const finalEpisodeCount = episodes.length;
-      
-      if (finalEpisodeCount === 0) {
-        console.warn(`[UAA-Task ${this.id}] ⚠️ 没有章节也没有音频URL，无法同步音频内容`);
-        
-        this.status = TaskStatus.COMPLETED;
-        this.endTime = Date.now();
-        this.result = {
-          success: true,
-          novelId: novelId,
-          title: detailData.title,
-          chapterCount: 0,
-          message: '同步成功（无音频内容）'
-        };
-        
-        // 传递novelId给前端
-        this.updateProgress('完成（无音频）', 100, { novelId: novelId });
-        
-        return this.result;
-      }
-      
-      console.log(`[UAA-Task ${this.id}] 📍 步骤5: 开始同步 ${finalEpisodeCount} 个章节`);
+      // Step 6: 同步章节（episodes 已在步骤4准备并验证）
+      console.log(`[UAA-Task ${this.id}] 📍 步骤6: 开始同步 ${finalEpisodeCount} 个章节`);
       
       let successCount = 0;
       let failCount = 0;
@@ -300,24 +319,38 @@ class UaaSyncTask {
         
         try {
           console.log(`\n[UAA-Task ${this.id}] --- 章节 ${chapterNum}/${finalEpisodeCount} ---`);
+          console.log(`[UAA-Task ${this.id}]   章节ID: ${episode.id || 'N/A'}`);
           console.log(`[UAA-Task ${this.id}]   标题: ${episode.title}`);
+          console.log(`[UAA-Task ${this.id}]   所属小说ID: ${novelId}`);
           
-          // 5a: 获取音频URL（如果还没有）
+          // 5a: 获取音频URL
           let audioUrl = episode.audioUrl;
           
-          if (!audioUrl && episode.url) {
-            console.log(`[UAA-Task ${this.id}]   访问章节页面提取音频URL: ${episode.url}`);
+          // ✅ 方案A：audioUrl已在详情页提取，直接使用
+          if (audioUrl) {
+            console.log(`[UAA-Task ${this.id}]   ✓ 使用已提取的音频URL: ${audioUrl}`);
+          }
+          // 🔄 备用方案：访问章节页提取音频URL
+          else if (episode.url) {
+            console.log(`[UAA-Task ${this.id}]   未找到音频URL，尝试访问章节页: ${episode.url}`);
             
-            const episodeHtml = await fetchWithBrowser(episode.url, { maxRetries: 2 });
-            const $ = cheerio.load(episodeHtml);
-            
-            // 从<audio>标签提取
-            const audioSrc = $('audio[src]').attr('src') || $('audio source[src]').attr('src');
-            if (audioSrc) {
-              audioUrl = audioSrc.startsWith('http') 
-                ? audioSrc 
-                : `${this.config.baseUrl}${audioSrc}`;
-              console.log(`[UAA-Task ${this.id}]   提取到音频URL: ${audioUrl}`);
+            try {
+              const episodeHtml = await fetchWithBrowser(episode.url, { 
+                maxRetries: 2,
+                waitForAudio: true  // 等待音频元素
+              });
+              const $ = cheerio.load(episodeHtml);
+              
+              // 从<audio>标签提取
+              const audioSrc = $('audio[src]').attr('src') || $('audio source[src]').attr('src');
+              if (audioSrc) {
+                audioUrl = audioSrc.startsWith('http') 
+                  ? audioSrc 
+                  : `${this.config.baseUrl}${audioSrc}`;
+                console.log(`[UAA-Task ${this.id}]   ✓ 从章节页提取到音频URL: ${audioUrl}`);
+              }
+            } catch (error) {
+              console.error(`[UAA-Task ${this.id}]   ✗ 访问章节页失败: ${error.message}`);
             }
           }
           
@@ -368,6 +401,13 @@ class UaaSyncTask {
           
         } catch (error) {
           console.error(`[UAA-Task ${this.id}]   ❌ 章节处理失败: ${error.message}`);
+          console.error(`[UAA-Task ${this.id}]   错误堆栈:`, error.stack);
+          console.error(`[UAA-Task ${this.id}]   章节信息:`, {
+            id: episode.id,
+            title: episode.title,
+            audioUrl: episode.audioUrl,
+            chapterNum: chapterNum
+          });
           failCount++;
           
           // 单个章节失败不中断整体流程，继续下一章节
@@ -375,6 +415,16 @@ class UaaSyncTask {
       }
       
       // Step 6: 完成
+      console.log(`\n[UAA-Task ${this.id}] ========================================`);
+      console.log(`[UAA-Task ${this.id}] 📊 章节同步统计:`);
+      console.log(`[UAA-Task ${this.id}]   总数: ${finalEpisodeCount}`);
+      console.log(`[UAA-Task ${this.id}]   成功: ${successCount}`);
+      console.log(`[UAA-Task ${this.id}]   失败: ${failCount}`);
+      if (failCount > 0) {
+        console.warn(`[UAA-Task ${this.id}] ⚠️⚠️⚠️ 有 ${failCount} 个章节同步失败，请检查上面的错误日志！`);
+      }
+      console.log(`[UAA-Task ${this.id}] ========================================\n`);
+      
       this.status = TaskStatus.COMPLETED;
       this.endTime = Date.now();
       this.result = {

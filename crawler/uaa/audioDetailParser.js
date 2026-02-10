@@ -31,8 +31,13 @@ async function getAudioDetail(audioId, detailUrl) {
     // 使用浏览器模式获取详情页
     let html;
     if (config.useBrowserMode) {
-      console.log(`[UAA-AudioDetailParser] 使用浏览器模式获取详情`);
-      html = await fetchWithBrowser(url, { maxRetries: 2, retryDelay: 1000 });
+      console.log(`[UAA-AudioDetailParser] 使用浏览器模式获取详情（等待JS执行）`);
+      // ✅ 详情页需要等待JS执行，确保音频URL被正确生成
+      html = await fetchWithBrowser(url, { 
+        maxRetries: 2, 
+        retryDelay: 1000,
+        waitForAudio: true  // 标记需要等待音频元素
+      });
     } else {
       html = await httpGet(url);
     }
@@ -76,12 +81,51 @@ async function getAudioDetail(audioId, detailUrl) {
     
     detail.episodeCount = detail.episodes.length;
     
-    // 如果没有从audio标签提取到，尝试从章节中提取
-    if (detail.audioUrls.length === 0 && detail.episodes.length > 0 && detail.episodes[0].audioUrl) {
-      detail.audioUrls.push(detail.episodes[0].audioUrl);
+    // 🎯 兼容处理：确保单音频和多音频都能正确同步
+    
+    // 情况1: 有章节列表，且提取到了audio标签的真实URL
+    if (detail.episodes.length > 0 && detail.audioUrls.length > 0) {
+      // ✅ 对于单集（只有1个章节），用audio标签的真实URL替换构造的URL
+      if (detail.episodes.length === 1) {
+        const realAudioUrl = detail.audioUrls[0];
+        const constructedUrl = detail.episodes[0].audioUrl;
+        
+        // 如果两个URL不同，说明构造的URL可能不正确，用真实URL替换
+        if (realAudioUrl !== constructedUrl) {
+          console.log(`[UAA-AudioDetailParser] 🔄 单集检测到URL不一致，使用真实URL`);
+          console.log(`[UAA-AudioDetailParser]   构造的URL: ${constructedUrl}`);
+          console.log(`[UAA-AudioDetailParser]   真实URL: ${realAudioUrl}`);
+          detail.episodes[0].audioUrl = realAudioUrl;  // ✅ 替换为真实URL
+        }
+      }
+      // 对于多集，从第一个章节补充audioUrls（如果需要）
+      else if (detail.audioUrls.length === 0 && detail.episodes[0].audioUrl) {
+        detail.audioUrls.push(detail.episodes[0].audioUrl);
+        console.log(`[UAA-AudioDetailParser] 从章节列表补充audioUrls: ${detail.audioUrls[0]}`);
+      }
     }
     
-    console.log(`[UAA-AudioDetailParser] 详情解析成功: ${detail.title}, ${detail.episodeCount} 个章节`);
+    // 情况2: 有章节列表（多集），但没有提取到audioUrls
+    else if (detail.episodes.length > 0 && detail.audioUrls.length === 0) {
+      // 从第一个章节提取audioUrl作为备用
+      if (detail.episodes[0].audioUrl) {
+        detail.audioUrls.push(detail.episodes[0].audioUrl);
+        console.log(`[UAA-AudioDetailParser] 从章节列表补充audioUrls: ${detail.audioUrls[0]}`);
+      }
+    }
+    
+    // 情况3: 没有章节列表（单音频），但有audioUrls
+    else if (detail.episodes.length === 0 && detail.audioUrls.length > 0) {
+      console.log(`[UAA-AudioDetailParser] 检测到单音频（无章节列表），audioUrls: ${detail.audioUrls.length} 个`);
+      // ✅ 这种情况会由 uaaSyncTask.js 的虚拟章节逻辑处理
+    }
+    
+    // 情况4: 既没有章节列表，也没有audioUrls（需要警告）
+    else if (detail.episodes.length === 0 && detail.audioUrls.length === 0) {
+      console.warn(`[UAA-AudioDetailParser] ⚠️ 未提取到任何音频数据（无章节，无audioUrls）`);
+    }
+    
+    console.log(`[UAA-AudioDetailParser] 详情解析成功: ${detail.title}, 章节数: ${detail.episodeCount}, 音频URL数: ${detail.audioUrls.length}`);
     return detail;
     
   } catch (error) {
@@ -350,7 +394,39 @@ function extractAudioUrls($) {
 function extractEpisodes($) {
   const episodes = [];
   
-  // 尝试多个选择器查找章节列表
+  // 🎯 方案A：优先从详情页的章节列表直接提取（包含章节ID和音频URL）
+  console.log('[UAA-AudioDetailParser] 尝试从catalog_ul提取章节列表...');
+  $('.catalog_ul li.menu div[data-id]').each((i, el) => {
+    const $el = $(el);
+    const chapterId = $el.attr('data-id');
+    const title = $el.text().trim();
+    
+    if (chapterId && title) {
+      // ✅ 直接构造音频URL，无需访问章节页
+      const audioUrl = `https://cdn.uameta.ai/file/bucket-media/audio/${chapterId}.mp3`;
+      
+      episodes.push({
+        id: chapterId,  // 章节ID
+        index: i + 1,
+        title: cleanText(title),
+        url: buildUrl(config.baseUrl, `/audio/chapter?id=${chapterId}`),
+        audioUrl: audioUrl,  // ✅ 直接可用的音频URL
+        duration: null
+      });
+      
+      console.log(`[UAA-AudioDetailParser]   章节 ${i + 1}: ${title} (ID: ${chapterId})`);
+    }
+  });
+  
+  // 如果方案A成功提取到章节，直接返回
+  if (episodes.length > 0) {
+    console.log(`[UAA-AudioDetailParser] ✓ 从catalog_ul提取到 ${episodes.length} 个章节`);
+    return episodes;
+  }
+  
+  // 🔄 备用方案：使用原有的多选择器查找逻辑
+  console.log('[UAA-AudioDetailParser] catalog_ul未找到章节，尝试其他选择器...');
+  
   const selectors = [
     '.episode-list .episode-item',
     '.chapter-list .chapter-item',
@@ -377,11 +453,12 @@ function extractEpisodes($) {
     });
     
     if (episodes.length > 0) {
+      console.log(`[UAA-AudioDetailParser] ✓ 使用选择器 ${selector} 提取到 ${episodes.length} 个章节`);
       break;
     }
   }
   
-  console.log(`[UAA-AudioDetailParser] 提取到 ${episodes.length} 个章节`);
+  console.log(`[UAA-AudioDetailParser] 最终提取到 ${episodes.length} 个章节`);
   return episodes;
 }
 

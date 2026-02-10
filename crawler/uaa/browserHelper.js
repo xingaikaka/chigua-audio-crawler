@@ -426,21 +426,9 @@ async function createNewPage() {
     console.log('[BrowserHelper] Cookie已注入');
   }
   
-  // 🚀 启用请求拦截，阻止加载不必要的资源（提速3-5秒）
-  await page.setRequestInterception(true);
-  page.on('request', (request) => {
-    const resourceType = request.resourceType();
-    // 只允许加载document和xhr，阻止图片、样式、字体、媒体等
-    if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
-      request.abort();
-    } else {
-      request.continue();
-    }
-  });
-  
-  // 设置超时（🚀 从 60000 降低到 30000）
-  page.setDefaultTimeout(30000);
-  page.setDefaultNavigationTimeout(30000);
+  // 设置超时
+  page.setDefaultTimeout(60000);
+  page.setDefaultNavigationTimeout(60000);
   
   return page;
 }
@@ -485,10 +473,31 @@ async function fetchWithBrowser(url, options = {}) {
       // ✅ 每次请求创建新的page实例
       currentPage = await createNewPage();
       
-      // 访问页面（优化：只等待DOM加载，不等待所有资源）
+      // 🚀 启用请求拦截（列表页优化，阻止不必要的资源）
+      if (!options.waitForAudio) {
+        await currentPage.setRequestInterception(true);
+        currentPage.on('request', (request) => {
+          const resourceType = request.resourceType();
+          // 列表页：阻止图片、样式、字体、媒体等，提速3-5秒
+          if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+            request.abort();
+          } else {
+            request.continue();
+          }
+        });
+        console.log('[BrowserHelper] ✓ 资源拦截已启用（列表页优化）');
+      } else {
+        console.log('[BrowserHelper] 资源拦截已禁用（详情页需要音频资源）');
+      }
+      
+      // 访问页面
+      // 🎯 如果需要等待音频（详情页），使用 networkidle2，否则用 domcontentloaded
+      const waitStrategy = options.waitForAudio ? 'networkidle2' : 'domcontentloaded';
+      console.log(`[BrowserHelper] 等待策略: ${waitStrategy}${options.waitForAudio ? ' (详情页，等待音频)' : ' (列表页，快速加载)'}`);
+      
       const response = await currentPage.goto(url, {
-        waitUntil: 'domcontentloaded',  // 🚀 从 networkidle2 改为 domcontentloaded，提速6-8秒
-        timeout: 30000  // 🚀 从 60000 改为 30000
+        waitUntil: waitStrategy,
+        timeout: options.waitForAudio ? 60000 : 30000  // 详情页给更多时间
       });
       
       // 检查响应状态
@@ -513,7 +522,23 @@ async function fetchWithBrowser(url, options = {}) {
         throw new Error(`HTTP ${status}`);
       }
       
-      // 获取HTML（🚀 移除固定2秒延迟，提速2秒）
+      // 🎵 如果需要等待音频元素（详情页）
+      if (options.waitForAudio) {
+        try {
+          console.log('[BrowserHelper] 等待音频元素加载...');
+          // 等待audio标签或source标签出现
+          await currentPage.waitForSelector('audio, source, [data-src*="mp3"], [data-src*="m4a"]', { 
+            timeout: 5000 
+          });
+          console.log('[BrowserHelper] ✓ 音频元素已加载');
+          // 再给一点时间让JS执行完
+          await sleep(500);
+        } catch (e) {
+          console.warn('[BrowserHelper] ⚠️ 未找到音频元素，继续获取HTML');
+        }
+      }
+      
+      // 获取HTML
       const html = await currentPage.content();
       
       console.log(`[BrowserHelper] 成功获取页面 (${html.length} 字符)`);
