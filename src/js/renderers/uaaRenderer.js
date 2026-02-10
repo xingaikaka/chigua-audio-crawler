@@ -852,38 +852,6 @@ class UAAAudioRenderer {
   }
   
   /**
-   * 处理播放
-   */
-  async handlePlay(audio) {
-    console.log('[UAA-Renderer] 播放音频:', audio.title);
-    
-    // 检查是否有音频源
-    if (!audio.audioUrls || audio.audioUrls.length === 0) {
-      // 尝试获取详情
-      showToast('正在加载音频信息...', 'info');
-      
-      const detail = await this.fetchAudioDetail(audio);
-      if (detail && detail.audioUrls && detail.audioUrls.length > 0) {
-        // 更新audio对象
-        audio.audioUrls = detail.audioUrls;
-        audio.episodes = detail.episodes || [];
-        audio.episodeCount = detail.episodeCount || 0;
-        audio.description = detail.description || audio.description;
-        
-        // 播放
-        this.playAudio(audio, null);
-        return;
-      }
-      
-      showToast('暂无可播放的音频', 'warning');
-      return;
-    }
-    
-    // 播放第一个音频
-    this.playAudio(audio, null);
-  }
-  
-  /**
    * 获取音频详情
    */
   async fetchAudioDetail(audio) {
@@ -904,253 +872,6 @@ class UAAAudioRenderer {
       console.error('[UAA-Renderer] 获取详情异常:', error);
       return null;
     }
-  }
-  
-  /**
-   * 播放音频
-   */
-  playAudio(audio, episode) {
-    const audioUrl = episode ? episode.audioUrl : audio.audioUrls[0];
-    const title = episode ? `${audio.title} - ${episode.title}` : audio.title;
-    
-    if (!audioUrl) {
-      showToast('音频链接不可用', 'error');
-      return;
-    }
-    
-    console.log('[UAA-Renderer] 播放:', title, audioUrl);
-    
-    // 创建或更新播放器
-    if (!window.uaaAudioPlayer) {
-      window.uaaAudioPlayer = this.createAudioPlayer();
-    }
-    
-    // 如果正在播放同一个音频，则暂停
-    if (window.uaaAudioPlayer.currentAudio && 
-        window.uaaAudioPlayer.currentAudio.url === audioUrl && 
-        !window.uaaAudioPlayer.audio.paused) {
-      window.uaaAudioPlayer.pause();
-      showToast(`已暂停: ${title}`, 'info');
-      this.updatePlayButton('paused');
-      return;
-    }
-    
-    window.uaaAudioPlayer.load(audioUrl, title, audio);
-    window.uaaAudioPlayer.play();
-    this.updatePlayButton('playing');
-    
-    showToast(`正在播放: ${title}`, 'success');
-  }
-  
-  /**
-   * 更新播放按钮状态
-   */
-  updatePlayButton(state) {
-    // 更新所有播放按钮的图标
-    document.querySelectorAll('.btn-play').forEach(btn => {
-      const icon = btn.querySelector('.btn-icon');
-      const text = btn.querySelector('.btn-text');
-      if (icon && text) {
-        if (state === 'playing') {
-          icon.textContent = '⏸';
-          text.textContent = '暂停';
-        } else {
-          icon.textContent = '▶';
-          text.textContent = '播放';
-        }
-      }
-    });
-  }
-  
-  /**
-   * 创建音频播放器
-   */
-  createAudioPlayer() {
-    const self = this;
-    
-    // 创建播放器UI
-    this.createPlayerUI();
-    
-    const player = {
-      audio: new Audio(),
-      currentAudio: null,
-      playerUI: document.getElementById('uaa-audio-player'),
-      
-      load(url, title, audioData) {
-        this.audio.src = url;
-        this.currentAudio = { url, title, audioData };
-        console.log('[AudioPlayer] 加载:', title);
-        
-        // 更新UI
-        if (this.playerUI) {
-          this.playerUI.querySelector('.player-title').textContent = title;
-          this.playerUI.classList.add('active');
-        }
-      },
-      
-      play() {
-        this.audio.play().catch(error => {
-          console.error('[AudioPlayer] 播放失败:', error);
-          showToast('播放失败: ' + error.message, 'error');
-        });
-        
-        // 更新UI
-        if (this.playerUI) {
-          this.playerUI.querySelector('.player-play-btn').innerHTML = '⏸';
-          this.playerUI.classList.add('playing');
-        }
-        self.updatePlayButton('playing');
-      },
-      
-      pause() {
-        this.audio.pause();
-        
-        // 更新UI
-        if (this.playerUI) {
-          this.playerUI.querySelector('.player-play-btn').innerHTML = '▶';
-          this.playerUI.classList.remove('playing');
-        }
-        self.updatePlayButton('paused');
-      },
-      
-      toggle() {
-        if (this.audio.paused) {
-          this.play();
-        } else {
-          this.pause();
-        }
-      },
-      
-      stop() {
-        this.audio.pause();
-        this.audio.currentTime = 0;
-        
-        // 更新UI
-        if (this.playerUI) {
-          this.playerUI.classList.remove('active', 'playing');
-        }
-        self.updatePlayButton('paused');
-      }
-    };
-    
-    // 监听播放事件
-    player.audio.addEventListener('play', () => {
-      console.log('[AudioPlayer] 开始播放');
-      if (player.playerUI) {
-        player.playerUI.querySelector('.player-play-btn').innerHTML = '⏸';
-        player.playerUI.classList.add('playing');
-      }
-    });
-    
-    player.audio.addEventListener('pause', () => {
-      console.log('[AudioPlayer] 已暂停');
-      if (player.playerUI) {
-        player.playerUI.querySelector('.player-play-btn').innerHTML = '▶';
-        player.playerUI.classList.remove('playing');
-      }
-    });
-    
-    player.audio.addEventListener('ended', () => {
-      console.log('[AudioPlayer] 播放结束');
-      showToast('播放完毕', 'info');
-      if (player.playerUI) {
-        player.playerUI.classList.remove('playing');
-        player.playerUI.querySelector('.player-play-btn').innerHTML = '▶';
-      }
-      self.updatePlayButton('paused');
-    });
-    
-    player.audio.addEventListener('error', (e) => {
-      console.error('[AudioPlayer] 播放错误:', e);
-      showToast('播放出错', 'error');
-      if (player.playerUI) {
-        player.playerUI.classList.remove('playing');
-      }
-    });
-    
-    player.audio.addEventListener('timeupdate', () => {
-      if (player.playerUI && player.audio.duration) {
-        const progress = (player.audio.currentTime / player.audio.duration) * 100;
-        player.playerUI.querySelector('.player-progress-bar').style.width = progress + '%';
-        
-        const currentTime = self.formatTime(player.audio.currentTime);
-        const duration = self.formatTime(player.audio.duration);
-        player.playerUI.querySelector('.player-time').textContent = `${currentTime} / ${duration}`;
-      }
-    });
-    
-    return player;
-  }
-  
-  /**
-   * 创建播放器UI
-   */
-  createPlayerUI() {
-    if (document.getElementById('uaa-audio-player')) return;
-    
-    const playerHTML = `
-      <div id="uaa-audio-player" class="uaa-audio-player">
-        <div class="player-content">
-          <div class="player-info">
-            <div class="player-title">未播放</div>
-            <div class="player-time">00:00 / 00:00</div>
-          </div>
-          <div class="player-progress">
-            <div class="player-progress-bg">
-              <div class="player-progress-bar"></div>
-            </div>
-          </div>
-          <div class="player-controls">
-            <button class="player-play-btn" title="播放/暂停">▶</button>
-            <button class="player-stop-btn" title="停止">⏹</button>
-            <button class="player-close-btn" title="关闭">✖</button>
-          </div>
-        </div>
-      </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', playerHTML);
-    
-    // 绑定事件
-    const player = document.getElementById('uaa-audio-player');
-    
-    player.querySelector('.player-play-btn').addEventListener('click', () => {
-      if (window.uaaAudioPlayer) {
-        window.uaaAudioPlayer.toggle();
-      }
-    });
-    
-    player.querySelector('.player-stop-btn').addEventListener('click', () => {
-      if (window.uaaAudioPlayer) {
-        window.uaaAudioPlayer.stop();
-      }
-    });
-    
-    player.querySelector('.player-close-btn').addEventListener('click', () => {
-      if (window.uaaAudioPlayer) {
-        window.uaaAudioPlayer.stop();
-        player.classList.remove('active');
-      }
-    });
-    
-    // 点击进度条跳转
-    player.querySelector('.player-progress-bg').addEventListener('click', (e) => {
-      if (window.uaaAudioPlayer && window.uaaAudioPlayer.audio.duration) {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const percent = (e.clientX - rect.left) / rect.width;
-        window.uaaAudioPlayer.audio.currentTime = percent * window.uaaAudioPlayer.audio.duration;
-      }
-    });
-  }
-  
-  /**
-   * 格式化时间
-   */
-  formatTime(seconds) {
-    if (isNaN(seconds)) return '00:00';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
   
   /**
@@ -1432,9 +1153,6 @@ class UAAAudioRenderer {
           ` : ''}
         </div>
         <div class="dialog-footer">
-          <button class="btn btn-primary btn-play-detail" data-audio-id="${audio.article_id}">
-            <span class="btn-icon">▶</span> 播放
-          </button>
           ${audio.episodes && audio.episodes.length > 0 ? `
             <button class="btn btn-secondary btn-episodes-detail">
               <span class="btn-icon">📋</span> 章节列表
@@ -1454,14 +1172,6 @@ class UAAAudioRenderer {
     });
     
     dialog.querySelector('.dialog-overlay').addEventListener('click', () => dialog.remove());
-    
-    const playBtn = dialog.querySelector('.btn-play-detail');
-    if (playBtn) {
-      playBtn.addEventListener('click', () => {
-        this.handlePlay(audio);
-        dialog.remove();
-      });
-    }
     
     const episodesBtn = dialog.querySelector('.btn-episodes-detail');
     if (episodesBtn) {
@@ -1524,15 +1234,6 @@ class UAAAudioRenderer {
     `;
     
     document.body.appendChild(dialog);
-    
-    // 绑定章节点击事件
-    dialog.querySelectorAll('.episode-item').forEach((item, index) => {
-      item.addEventListener('click', () => {
-        const episode = audio.episodes[index];
-        this.playAudio(audio, episode);
-        dialog.remove();
-      });
-    });
     
     // 绑定关闭事件
     dialog.querySelectorAll('.dialog-close').forEach(btn => {

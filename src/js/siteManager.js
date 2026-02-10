@@ -25,9 +25,15 @@ class SiteManager {
         
         console.log('[SiteManager] 站点列表加载成功:', this.sites);
         
-        // 加载上次选择的站点，或使用默认站点
+        // 找到第一个启用的站点作为默认站点
+        const firstEnabledSite = this.sites.find(s => s.enabled);
+        const defaultSiteId = firstEnabledSite ? firstEnabledSite.id : this.defaultSiteId;
+        
+        // 加载上次选择的站点，或使用第一个启用的站点
         const savedSiteId = localStorage.getItem('current_site_id');
-        const initialSiteId = savedSiteId || this.defaultSiteId;
+        const initialSiteId = savedSiteId || defaultSiteId;
+        
+        console.log('[SiteManager] 默认站点ID:', defaultSiteId, '初始站点ID:', initialSiteId);
         
         await this.switchSite(initialSiteId, true);
         

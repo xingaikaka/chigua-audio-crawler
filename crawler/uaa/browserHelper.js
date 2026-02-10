@@ -14,33 +14,73 @@ let browser = null;
  * 优先使用系统Chrome，更可靠且体积小
  */
 function getChromePath() {
-  console.log('[BrowserHelper] Chrome路径检测:', {
+  console.log('[BrowserHelper] ========== Chrome路径检测开始 ==========');
+  console.log('[BrowserHelper] 系统信息:', {
     platform: process.platform,
     arch: process.arch,
+    home: process.env.HOME,
     isPackaged: process.resourcesPath && process.resourcesPath.includes('app.asar')
   });
   
-  // 🔥 查找系统已安装的 Chrome
-  const systemChromePaths = [
-    // macOS 系统路径
-    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-    '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary',
-    '/Applications/Chromium.app/Contents/MacOS/Chromium',
-    '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
-    // 用户自定义安装路径
-    path.join(process.env.HOME, 'Applications/Google Chrome.app/Contents/MacOS/Google Chrome'),
-  ];
+  // 🔥 查找系统已安装的 Chrome（根据平台）
+  let systemChromePaths = [];
   
-  console.log('[BrowserHelper] 尝试查找系统Chrome...');
+  if (process.platform === 'darwin') {
+    // macOS 路径
+    systemChromePaths = [
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary',
+      '/Applications/Chromium.app/Contents/MacOS/Chromium',
+      '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+      path.join(process.env.HOME, 'Applications/Google Chrome.app/Contents/MacOS/Google Chrome'),
+      path.join(process.env.HOME, '/Library/Application Support/Google/Chrome/Google Chrome.app/Contents/MacOS/Google Chrome'),
+    ];
+  } else if (process.platform === 'win32') {
+    // Windows 路径
+    systemChromePaths = [
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+      path.join(process.env.LOCALAPPDATA, 'Google\\Chrome\\Application\\chrome.exe'),
+      path.join(process.env.PROGRAMFILES, 'Google\\Chrome\\Application\\chrome.exe'),
+      path.join(process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)', 'Google\\Chrome\\Application\\chrome.exe'),
+    ];
+  } else {
+    // Linux 路径
+    systemChromePaths = [
+      '/usr/bin/google-chrome',
+      '/usr/bin/google-chrome-stable',
+      '/usr/bin/chromium',
+      '/usr/bin/chromium-browser',
+      '/snap/bin/chromium',
+    ];
+  }
   
-  for (const chromePath of systemChromePaths) {
-    if (fs.existsSync(chromePath)) {
-      console.log('[BrowserHelper] ✓ 找到系统Chrome:', chromePath);
-      return chromePath;
+  console.log('[BrowserHelper] 将检测以下路径:');
+  systemChromePaths.forEach((p, i) => console.log(`  [${i + 1}] ${p}`));
+  
+  for (let i = 0; i < systemChromePaths.length; i++) {
+    const chromePath = systemChromePaths[i];
+    console.log(`[BrowserHelper] [${i + 1}/${systemChromePaths.length}] 检查: ${chromePath}`);
+    
+    try {
+      if (fs.existsSync(chromePath)) {
+        const stats = fs.statSync(chromePath);
+        if (stats.isFile()) {
+          console.log(`[BrowserHelper] ✅ 找到可用Chrome: ${chromePath}`);
+          console.log('[BrowserHelper] ========== Chrome路径检测成功 ==========');
+          return chromePath;
+        } else {
+          console.log(`[BrowserHelper]    ⚠️  路径存在但不是文件（可能是目录）`);
+        }
+      } else {
+        console.log(`[BrowserHelper]    ❌ 路径不存在`);
+      }
+    } catch (err) {
+      console.log(`[BrowserHelper]    ❌ 检查失败: ${err.message}`);
     }
   }
   
-  console.warn('[BrowserHelper] ✗ 未找到系统Chrome，Puppeteer将使用默认配置');
+  console.warn('[BrowserHelper] ========== 未找到系统Chrome ==========');
   return null;
 }
 
@@ -170,14 +210,95 @@ function getChromePath_OLD() {
 */
 
 /**
+ * 下载并获取 Chrome
+ */
+async function ensureChrome() {
+  console.log('[BrowserHelper] ========== 准备下载Chrome ==========');
+  
+  const { app } = require('electron');
+  const userDataPath = app.getPath('userData');
+  const chromeCachePath = path.join(userDataPath, '.chrome-cache');
+  
+  console.log('[BrowserHelper] 应用数据目录:', userDataPath);
+  console.log('[BrowserHelper] Chrome缓存目录:', chromeCachePath);
+  
+  // 确保缓存目录存在
+  try {
+    if (!fs.existsSync(chromeCachePath)) {
+      console.log('[BrowserHelper] 创建Chrome缓存目录...');
+      fs.mkdirSync(chromeCachePath, { recursive: true });
+      console.log('[BrowserHelper] ✓ 目录创建成功');
+    } else {
+      console.log('[BrowserHelper] Chrome缓存目录已存在');
+    }
+  } catch (err) {
+    console.error('[BrowserHelper] ✗ 创建缓存目录失败:', err.message);
+    return null;
+  }
+  
+  try {
+    console.log('[BrowserHelper] 初始化Puppeteer BrowserFetcher...');
+    
+    // 使用 Puppeteer 的 BrowserFetcher 下载 Chrome
+    const browserFetcher = puppeteer.createBrowserFetcher({
+      path: chromeCachePath,
+    });
+    
+    const revision = puppeteer.PUPPETEER_REVISIONS.chromium;
+    console.log('[BrowserHelper] Chrome版本:', revision);
+    
+    // 先检查是否已经下载过
+    const localRevisions = await browserFetcher.localRevisions();
+    console.log('[BrowserHelper] 已下载的Chrome版本:', localRevisions);
+    
+    if (localRevisions.includes(revision)) {
+      const revisionInfo = browserFetcher.revisionInfo(revision);
+      if (fs.existsSync(revisionInfo.executablePath)) {
+        console.log('[BrowserHelper] ✅ Chrome已存在，无需下载');
+        console.log('[BrowserHelper] Chrome路径:', revisionInfo.executablePath);
+        console.log('[BrowserHelper] ========== Chrome准备完成 ==========');
+        return revisionInfo.executablePath;
+      } else {
+        console.log('[BrowserHelper] ⚠️  本地记录存在但文件丢失，重新下载...');
+      }
+    }
+    
+    console.log('[BrowserHelper] 📥 开始下载Chrome（首次运行需要时间，请耐心等待）...');
+    
+    // 下载Chrome并显示进度
+    let lastProgress = 0;
+    const revisionInfo = await browserFetcher.download(revision, (downloadBytes, totalBytes) => {
+      const percent = Math.floor((downloadBytes / totalBytes) * 100);
+      if (percent - lastProgress >= 10 || percent === 100) {
+        console.log(`[BrowserHelper] 下载进度: ${percent}% (${Math.floor(downloadBytes / 1024 / 1024)}MB / ${Math.floor(totalBytes / 1024 / 1024)}MB)`);
+        lastProgress = percent;
+      }
+    });
+    
+    console.log('[BrowserHelper] ✅ Chrome下载完成:', revisionInfo.executablePath);
+    console.log('[BrowserHelper] ========== Chrome准备完成 ==========');
+    return revisionInfo.executablePath;
+  } catch (error) {
+    console.error('[BrowserHelper] ========== Chrome下载失败 ==========');
+    console.error('[BrowserHelper] 错误详情:', error.message);
+    console.error('[BrowserHelper] 错误堆栈:', error.stack);
+    console.error('[BrowserHelper] 提示: 请检查网络连接，或手动安装Google Chrome浏览器');
+    return null;
+  }
+}
+
+/**
  * 初始化浏览器
  */
 async function initBrowser() {
   if (browser) {
+    console.log('[BrowserHelper] 浏览器已存在，直接返回');
     return browser;
   }
   
-  console.log('[BrowserHelper] 启动浏览器...');
+  console.log('[BrowserHelper] ========================================');
+  console.log('[BrowserHelper] 开始初始化浏览器...');
+  console.log('[BrowserHelper] ========================================');
   
   const launchOptions = {
     headless: 'new', // 使用新的headless模式
@@ -192,37 +313,90 @@ async function initBrowser() {
     ]
   };
   
-  // 尝试获取自定义Chrome路径
-  const chromePath = getChromePath();
+  const errors = []; // 收集所有错误信息
   
-  if (chromePath) {
-    console.log('[BrowserHelper] 使用自定义Chrome路径:', chromePath);
-    launchOptions.executablePath = chromePath;
+  // 🔍 方案1: 尝试使用系统安装的Chrome
+  console.log('\n[BrowserHelper] 🔍 方案1: 检测系统Chrome...');
+  const systemChromePath = getChromePath();
+  
+  if (systemChromePath) {
+    console.log('[BrowserHelper] 使用系统Chrome:', systemChromePath);
+    launchOptions.executablePath = systemChromePath;
     
     try {
-      // 尝试使用自定义Chrome启动
+      console.log('[BrowserHelper] 正在启动浏览器...');
       browser = await puppeteer.launch(launchOptions);
-      console.log('[BrowserHelper] ✓ 浏览器启动成功（自定义Chrome）');
+      console.log('[BrowserHelper] ✅ 浏览器启动成功（系统Chrome）');
+      console.log('[BrowserHelper] ========================================\n');
       return browser;
     } catch (error) {
-      console.error('[BrowserHelper] ✗ 使用自定义Chrome启动失败:', error.message);
-      console.log('[BrowserHelper] 尝试使用系统Chrome...');
-      // 移除自定义路径，使用系统Chrome重试
+      const errorMsg = `系统Chrome启动失败: ${error.message}`;
+      console.error('[BrowserHelper] ❌', errorMsg);
+      errors.push(errorMsg);
       delete launchOptions.executablePath;
     }
   } else {
-    console.log('[BrowserHelper] 未找到自定义Chrome，使用系统Chrome');
+    const errorMsg = '未找到系统安装的Chrome';
+    console.log('[BrowserHelper] ⚠️ ', errorMsg);
+    errors.push(errorMsg);
   }
   
-  // 使用系统Chrome或Puppeteer默认Chrome
+  // 🔍 方案2: 尝试使用Puppeteer自带的Chrome
+  console.log('\n[BrowserHelper] 🔍 方案2: 尝试Puppeteer自带Chrome...');
   try {
+    console.log('[BrowserHelper] 正在启动浏览器...');
     browser = await puppeteer.launch(launchOptions);
-    console.log('[BrowserHelper] ✓ 浏览器启动成功（系统Chrome）');
+    console.log('[BrowserHelper] ✅ 浏览器启动成功（Puppeteer自带Chrome）');
+    console.log('[BrowserHelper] ========================================\n');
     return browser;
   } catch (error) {
-    console.error('[BrowserHelper] ✗ 浏览器启动失败:', error.message);
-    throw new Error(`无法启动浏览器: ${error.message}`);
+    const errorMsg = `Puppeteer自带Chrome启动失败: ${error.message}`;
+    console.log('[BrowserHelper] ❌', errorMsg);
+    errors.push(errorMsg);
   }
+  
+  // 🔍 方案3: 自动下载Chrome到应用数据目录
+  console.log('\n[BrowserHelper] 🔍 方案3: 自动下载Chrome...');
+  console.log('[BrowserHelper] 提示: 首次运行需要下载Chrome（约150MB），请耐心等待...');
+  
+  const downloadedChromePath = await ensureChrome();
+  
+  if (downloadedChromePath) {
+    launchOptions.executablePath = downloadedChromePath;
+    
+    try {
+      console.log('[BrowserHelper] 正在启动浏览器...');
+      browser = await puppeteer.launch(launchOptions);
+      console.log('[BrowserHelper] ✅ 浏览器启动成功（已下载Chrome）');
+      console.log('[BrowserHelper] ========================================\n');
+      return browser;
+    } catch (error) {
+      const errorMsg = `已下载Chrome启动失败: ${error.message}`;
+      console.error('[BrowserHelper] ❌', errorMsg);
+      errors.push(errorMsg);
+    }
+  } else {
+    const errorMsg = 'Chrome下载失败';
+    console.error('[BrowserHelper] ❌', errorMsg);
+    errors.push(errorMsg);
+  }
+  
+  // ❌ 所有方案都失败，输出详细错误信息
+  console.error('\n[BrowserHelper] ========================================');
+  console.error('[BrowserHelper] ❌ 所有Chrome启动方案都失败！');
+  console.error('[BrowserHelper] ========================================');
+  console.error('[BrowserHelper] 尝试的方案及错误:');
+  errors.forEach((err, index) => {
+    console.error(`  ${index + 1}. ${err}`);
+  });
+  console.error('\n[BrowserHelper] 💡 解决方案:');
+  console.error('  1. 请安装Google Chrome浏览器: https://www.google.com/chrome/');
+  console.error('  2. 确保网络连接正常（用于自动下载Chrome）');
+  console.error('  3. 关闭杀毒软件/防火墙后重试');
+  console.error('  4. 以管理员权限运行应用');
+  console.error('[BrowserHelper] ========================================\n');
+  
+  throw new Error(`无法启动浏览器。已尝试${errors.length}种方案均失败。请安装Google Chrome或检查网络连接。`);
 }
 
 /**
