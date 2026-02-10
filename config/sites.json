@@ -1,0 +1,38 @@
+{
+  "sites": [
+    {
+      "id": "51chigua",
+      "name": "51吃瓜",
+      "icon": "🍉",
+      "type": "image-video",
+      "description": "51吃瓜网站内容爬取",
+      "configFile": "51chigua.json",
+      "crawlerModule": "51chigua",
+      "rendererType": "grid",
+      "enabled": true
+    },
+    {
+      "id": "uaa",
+      "name": "UAA有声",
+      "icon": "🎵",
+      "type": "audio",
+      "description": "UAA有声小说内容爬取",
+      "configFile": "uaa.json",
+      "crawlerModule": "uaa",
+      "rendererType": "list",
+      "enabled": true
+    },
+    {
+      "id": "tianya",
+      "name": "天涯社区",
+      "icon": "🌍",
+      "type": "text",
+      "description": "天涯社区内容爬取",
+      "configFile": "tianya.json",
+      "crawlerModule": "tianya",
+      "rendererType": "grid",
+      "enabled": false
+    }
+  ],
+  "defaultSite": "51chigua"
+}

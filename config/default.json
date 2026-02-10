@@ -1,0 +1,28 @@
+{
+  "baseUrl": "https://51cg1.com",
+  "timeout": 10000,
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "pageSize": 20,
+  "excludeCategories": [
+    "官方活动",
+    "官方信息",
+    "精品应用"
+  ],
+  "excludeSubCategories": [
+    "网黄合集"
+  ],
+  "imageDecryptKey": "102_53_100_57_54_53_100_102_55_53_51_51_54_50_55_48",
+  "imageDecryptIV": "57_55_98_54_48_51_57_52_97_98_99_50_102_98_101_49",
+  "apiBaseUrl": "http://47.239.212.188:8880",
+  "syncUid": "1765988676000011375",
+  "roleCode": "jianzhi",
+  "authUuid": "dd7d5b1b9f1348ec58eb3a1b884b93a2",
+  "crawlerToken": "UQ8k7P2nV6cXr9T1mK5Zs3YpH8dN4bJ0qL2vW7eA",
+  "r2WorkerUrl": "https://khjghjghjjh.xyz/upload",
+  "r2PreviewDomain": "https://khjghjghjjh.xyz",
+  "r2ImageEncryptionKey": "cYC8lOMnoUnqzeFhYcGCoLqNa44k9RMfmoorxeS7vIo=",
+  "r2ImageEncryptionIV": "QuOHSIr6OPbRxShwqkaGQw==",
+  "maxConcurrent": 3,
+  "maxWorkers": 5,
+  "requestTimeout": 60000
+}

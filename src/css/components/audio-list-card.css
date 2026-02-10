@@ -1,0 +1,836 @@
+/**
+ * UAA有声小说列表样式 - 卡片网格模式
+ * 每行显示3个卡片，参考51吃瓜布局
+ */
+
+/* 题材筛选器 */
+.category-filter-container {
+  background: rgba(30, 30, 30, 0.95);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+  margin-bottom: 15px;
+  padding: 15px 20px;
+}
+
+.category-filter {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.filter-label {
+  color: #a0a0a0;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex: 1;
+}
+
+.category-btn {
+  padding: 6px 16px;
+  background: rgba(60, 60, 60, 0.6);
+  border: 1px solid rgba(100, 100, 100, 0.3);
+  border-radius: 6px;
+  color: #c0c0c0;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.category-btn:hover {
+  background: rgba(80, 80, 80, 0.8);
+  border-color: rgba(139, 92, 246, 0.5);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.category-btn.active {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  border-color: #8b5cf6;
+  color: #ffffff;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+}
+
+.category-btn.active:hover {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  transform: translateY(-1px);
+}
+
+/* 同步工具栏（参考51吃瓜样式） */
+.toolbar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: linear-gradient(180deg, rgba(42, 42, 42, 0.98), rgba(35, 35, 35, 0.98));
+  border-bottom: 2px solid rgba(139, 92, 246, 0.3);
+  margin-bottom: 15px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+  color: #d0d0d0;
+  font-weight: 500;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #8b5cf6;
+}
+
+.checkbox-label span {
+  transition: color 0.3s;
+}
+
+.checkbox-label:hover span {
+  color: #ffffff;
+}
+
+.selection-info {
+  font-size: 13px;
+  color: #999;
+  padding: 4px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.toolbar-right {
+  display: flex;
+  gap: 12px;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 255, 255, 0.08);
+  color: #c0c0c0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.action-btn .icon {
+  font-size: 16px;
+}
+
+.action-btn .text {
+  font-size: 13px;
+}
+
+.action-btn:not(.primary):hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.15);
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.95), rgba(124, 58, 237, 0.95));
+  color: white;
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+}
+
+.action-btn.primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 1), rgba(124, 58, 237, 1));
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+  transform: translateY(-2px);
+}
+
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.05);
+  color: #666;
+  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow: none;
+}
+
+.action-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* 同步进度面板 */
+.audio-list-container.uaa-site .sync-progress-panel {
+  position: fixed;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  width: 350px;
+  background: linear-gradient(180deg, #2d2d2d, #252525);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: none;
+}
+
+.audio-list-container.uaa-site .panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.audio-list-container.uaa-site .panel-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #f0f0f0;
+  font-weight: 600;
+}
+
+.audio-list-container.uaa-site .panel-header .close-btn {
+  background: transparent;
+  border: none;
+  color: #999;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.audio-list-container.uaa-site .panel-header .close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.audio-list-container.uaa-site .panel-body {
+  padding: 20px;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.audio-list-container.uaa-site .stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.audio-list-container.uaa-site .stat-label {
+  font-size: 11px;
+  color: #999;
+}
+
+.audio-list-container.uaa-site .stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #e0e0e0;
+}
+
+.audio-list-container.uaa-site .stat-value.running {
+  color: #60a5fa;
+}
+
+.audio-list-container.uaa-site .stat-value.completed {
+  color: #34d399;
+}
+
+.audio-list-container.uaa-site .stat-value.failed {
+  color: #f87171;
+}
+
+.audio-list-container.uaa-site .progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 15px;
+}
+
+.audio-list-container.uaa-site .progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6, #6366f1);
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.current-task {
+  font-size: 12px;
+  color: #b0b0b0;
+  text-align: center;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+.audio-list-container.uaa-site .panel-footer {
+  padding: 15px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.btn-stop {
+  padding: 8px 20px;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-stop:hover {
+  background: rgba(239, 68, 68, 1);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* 列表容器 - 覆盖默认样式 */
+.audio-list-container {
+  display: block !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+/* 网格容器 - 210px卡片布局 (只应用于UAA站点) */
+.audio-list-container.uaa-site .audio-list {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, 210px) !important;
+  gap: 10px !important;
+  padding: 10px !important;
+  width: 100% !important;
+  overflow: visible !important;
+  justify-content: flex-start !important;
+}
+
+/* 卡片容器 - 固定尺寸 210×380 (只应用于UAA站点) */
+.audio-list-container.uaa-site .audio-list-item {
+  display: flex !important;
+  flex-direction: column !important;
+  background: linear-gradient(180deg, #2d2d2d 0%, #222222 100%) !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  cursor: pointer !important;
+  width: 210px !important;
+  height: 380px !important;
+  border: none !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+.audio-list-container.uaa-site .audio-list-item:hover {
+  transform: translateY(-6px) !important;
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4), 0 0 0 1px rgba(139, 92, 246, 0.5) !important;
+}
+
+/* 封面区域 - 固定高度 260px (210×260) */
+.audio-list-container.uaa-site .audio-cover {
+  position: relative !important;
+  width: 100% !important;
+  height: 260px !important;
+  overflow: hidden !important;
+  background: linear-gradient(135deg, #2d2d2d 0%, #1e1e1e 100%) !important;
+  flex-shrink: 0 !important;
+  border-radius: 0 !important;
+}
+
+.audio-list-container.uaa-site .audio-cover img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  background: #1a1a1a !important;
+  transition: transform 0.3s ease !important;
+}
+
+.audio-list-container.uaa-site .audio-list-item:hover .audio-cover img {
+  transform: scale(1.05) !important;
+}
+
+/* 卡片checkbox覆盖层（参考51吃瓜） */
+.audio-list-container.uaa-site .card-checkbox-overlay {
+  position: absolute !important;
+  top: 8px !important;
+  left: 8px !important;
+  z-index: 10 !important;
+  background: rgba(0, 0, 0, 0.75) !important;
+  border-radius: 6px !important;
+  padding: 5px !important;
+  backdrop-filter: blur(8px) !important;
+  transition: all 0.3s ease !important;
+  opacity: 0 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+.audio-list-container.uaa-site .audio-list-item:hover .card-checkbox-overlay,
+.audio-list-container.uaa-site .audio-list-item.selected .card-checkbox-overlay {
+  opacity: 1 !important;
+}
+
+.audio-list-container.uaa-site .card-checkbox-overlay input[type="checkbox"] {
+  width: 20px !important;
+  height: 20px !important;
+  cursor: pointer !important;
+  accent-color: #8b5cf6 !important;
+  margin: 0 !important;
+  position: relative !important;
+  z-index: 11 !important;
+}
+
+/* 选中状态样式 */
+.audio-list-container.uaa-site .audio-list-item.selected {
+  border-color: rgba(139, 92, 246, 0.8) !important;
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.5), 
+              0 0 0 2px rgba(139, 92, 246, 0.5) !important;
+  transform: translateY(-4px) !important;
+}
+
+.audio-list-container.uaa-site .audio-list-item.selected .audio-cover::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(124, 58, 237, 0.3)) !important;
+  pointer-events: none !important;
+}
+
+.audio-list-container.uaa-site .audio-list-item.selected .audio-title {
+  color: #c4b5fd !important;
+}
+
+/* 封面标签 - 小尺寸显示 */
+.audio-list-container.uaa-site .audio-duration,
+.audio-list-container.uaa-site .audio-episodes {
+  position: absolute;
+  padding: 4px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  z-index: 2;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.audio-list-container.uaa-site .audio-duration {
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+}
+
+.audio-list-container.uaa-site .audio-episodes {
+  top: 8px;
+  right: 8px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.95), rgba(124, 58, 237, 0.95));
+  color: white;
+}
+
+/* 信息区域 - 固定高度内容区 (380 - 260 - 40 = 80px) */
+.audio-list-container.uaa-site .audio-info {
+  flex: 0 0 80px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 10px 12px 8px 12px !important;
+  gap: 8px !important;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.25) 100%) !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+/* 标题 - 单行显示 */
+.audio-list-container.uaa-site .audio-title {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  line-height: 1.4 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  height: 18px !important;
+  margin-bottom: 0 !important;
+  transition: all 0.3s !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5) !important;
+}
+
+.audio-list-container.uaa-site .audio-list-item:hover .audio-title {
+  color: #c4b5fd !important;
+}
+
+/* 元数据组 */
+.audio-list-container.uaa-site .audio-meta-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+/* 第一行：CV和分类 */
+.audio-list-container.uaa-site .meta-row-1 {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  font-size: 11px !important;
+  height: 16px !important;
+  line-height: 16px !important;
+}
+
+.audio-list-container.uaa-site .meta-cv {
+  color: #b0b0b0 !important;
+  font-size: 11px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  max-width: 48% !important;
+}
+
+.audio-list-container.uaa-site .meta-category {
+  color: #a0a0a0 !important;
+  font-size: 11px !important;
+  flex-shrink: 0 !important;
+}
+
+/* 第二行：统计信息 */
+.audio-list-container.uaa-site .meta-row-2 {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  font-size: 10px !important;
+  height: 16px !important;
+  line-height: 16px !important;
+}
+
+.audio-list-container.uaa-site .stat-time,
+.audio-list-container.uaa-site .stat-listen,
+.audio-list-container.uaa-site .stat-collect {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  color: #909090 !important;
+  white-space: nowrap !important;
+  font-size: 10px !important;
+}
+
+.audio-list-container.uaa-site .stat-time {
+  color: #808080 !important;
+}
+
+.audio-list-container.uaa-site .stat-listen {
+  color: #7dd3fc !important;
+}
+
+.audio-list-container.uaa-site .stat-collect {
+  color: #fb7185 !important;
+}
+
+/* 隐藏旧的元数据和底部 */
+.audio-list-container.uaa-site .audio-meta,
+.audio-list-container.uaa-site .audio-meta-row,
+.audio-stats,
+.audio-list-container.uaa-site .audio-desc,
+.audio-list-container.uaa-site .audio-footer {
+  display: none !important;
+}
+
+/* 操作按钮区域 - 固定高度 40px，增加间隔 */
+.audio-list-container.uaa-site .audio-actions {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
+  height: 40px !important;
+  padding: 0 12px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+  flex-shrink: 0 !important;
+}
+
+.audio-list-container.uaa-site .audio-btn {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  padding: 0 !important;
+  width: 56px !important;
+  height: 32px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #b0b0b0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 8px !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+.audio-list-container.uaa-site .audio-btn:last-child {
+  border-right: none !important;
+}
+
+.audio-list-container.uaa-site .audio-btn:hover:not(.disabled) {
+  background: rgba(139, 92, 246, 0.15) !important;
+  color: #a78bfa !important;
+  border-color: rgba(139, 92, 246, 0.3) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.2) !important;
+}
+
+.audio-list-container.uaa-site .audio-btn:active:not(.disabled) {
+  transform: translateY(0) !important;
+  box-shadow: none !important;
+}
+
+.audio-list-container.uaa-site .audio-btn.disabled {
+  opacity: 0.25 !important;
+  cursor: not-allowed !important;
+  background: rgba(255, 255, 255, 0.01) !important;
+}
+
+/* 播放按钮特殊样式 */
+.audio-list-container.uaa-site .btn-play {
+  color: #a78bfa !important;
+  background: rgba(139, 92, 246, 0.12) !important;
+  border-color: rgba(139, 92, 246, 0.2) !important;
+}
+
+.audio-list-container.uaa-site .btn-play:hover:not(.disabled) {
+  background: rgba(139, 92, 246, 0.25) !important;
+  color: #c4b5fd !important;
+  border-color: rgba(139, 92, 246, 0.5) !important;
+}
+
+.audio-list-container.uaa-site .btn-play .btn-icon {
+  color: #a78bfa !important;
+}
+
+.audio-list-container.uaa-site .audio-btn .btn-icon {
+  font-size: 15px !important;
+  transition: transform 0.25s !important;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3)) !important;
+}
+
+.audio-list-container.uaa-site .audio-btn:hover:not(.disabled) .btn-icon {
+  transform: scale(1.15) !important;
+}
+
+.audio-list-container.uaa-site .audio-btn .btn-text {
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.3px !important;
+}
+
+/* ========== 卡片底部同步进度（参考51吃瓜）========== */
+.audio-list-container.uaa-site .card-sync-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(26, 26, 26, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 10px 12px;
+  border-top: 1px solid rgba(139, 92, 246, 0.3);
+  z-index: 15;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 1;
+  border-radius: 0 0 12px 12px; /* 匹配卡片圆角 */
+}
+
+.audio-list-container.uaa-site .card-sync-progress.fade-out {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.audio-list-container.uaa-site .sync-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: #2d2d2d;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.audio-list-container.uaa-site .sync-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6 0%, #6d28d9 100%);
+  transition: width 0.3s ease;
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
+}
+
+.audio-list-container.uaa-site .sync-status-text {
+  font-size: 11px;
+  color: #b0b0b0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.audio-list-container.uaa-site .sync-status-text .step {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.audio-list-container.uaa-site .sync-status-text .percentage {
+  font-weight: 600;
+  color: #8b5cf6;
+  min-width: 40px;
+  text-align: right;
+}
+
+.audio-list-container.uaa-site .sync-status-text.success {
+  color: #10b981;
+}
+
+.audio-list-container.uaa-site .sync-status-text.success .percentage {
+  color: #10b981;
+}
+
+.audio-list-container.uaa-site .sync-status-text.error {
+  color: #ef4444;
+}
+
+.audio-list-container.uaa-site .sync-status-text.error .percentage {
+  color: #ef4444;
+}
+
+.audio-list-container.uaa-site .sync-status-text .icon {
+  font-size: 12px;
+}
+
+/* 卡片在同步时的样式 */
+.audio-list-container.uaa-site .audio-list-item.syncing .audio-actions {
+  display: none !important;
+}
+
+.audio-list-container.uaa-site .audio-list-item.syncing {
+  pointer-events: none; /* 同步时禁止点击 */
+}
+
+.audio-list-container.uaa-site .audio-list-item.syncing .card-checkbox-overlay {
+  display: none !important; /* 同步时隐藏checkbox */
+}
+
+/* 响应式适配 - 210px卡片 */
+@media (max-width: 1300px) {
+  .audio-list-container.uaa-site .audio-list {
+    grid-template-columns: repeat(auto-fill, 210px) !important;
+    justify-content: space-around !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .audio-list-container.uaa-site .audio-list {
+    grid-template-columns: repeat(auto-fill, 210px) !important;
+    justify-content: center !important;
+    padding: 10px !important;
+    gap: 10px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .audio-list-container.uaa-site .audio-list {
+    grid-template-columns: repeat(auto-fill, 210px) !important;
+    justify-content: center !important;
+  }
+  
+  .audio-list-container.uaa-site .audio-list-item {
+    width: 210px !important;
+  }
+}
+
+/* ========== 已同步状态样式 ========== */
+.audio-list-container.uaa-site .audio-list-item.synced {
+  opacity: 0.7;
+  filter: grayscale(0.3);
+  pointer-events: auto; /* 允许点击查看详情 */
+}
+
+.audio-list-container.uaa-site .audio-list-item.synced .card-checkbox-overlay {
+  display: none !important; /* 隐藏checkbox区域 */
+}
+
+.audio-list-container.uaa-site .audio-list-item.synced .item-checkbox {
+  display: none !important; /* 隐藏checkbox */
+}
+
+.audio-list-container.uaa-site .audio-list-item.synced .audio-cover {
+  border-color: #10b981;
+}
+
+.audio-list-container.uaa-site .audio-list-item.synced .sync-badge-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(16, 185, 129, 0.25);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.audio-list-container.uaa-site .audio-list-item.synced .sync-badge-overlay .badge-icon {
+  width: 60px;
+  height: 60px;
+  background: rgba(16, 185, 129, 0.95);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
+}
+
+.audio-list-container.uaa-site .audio-list-item.synced:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}

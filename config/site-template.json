@@ -1,0 +1,92 @@
+{
+  "_comment": "站点配置模板 - 复制此文件并重命名为 {站点名}.json",
+  
+  "crawlerModule": "站点爬虫模块名称（例如：51chigua、uaa）",
+  "siteType": "站点类型（video/audio/forum/article等）",
+  "baseUrl": "https://example.com",
+  "timeout": 10000,
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "pageSize": 20,
+  "maxConcurrent": 3,
+  "maxWorkers": 5,
+  "requestTimeout": 60000,
+  
+  "_cookieSection": "========== Cookie登录配置 ==========",
+  "loginRequired": false,
+  "loginUrl": "https://example.com/login",
+  "cookies": {
+    "_example": "如果使用结构化Cookie，在这里添加键值对",
+    "token": "",
+    "SESSION": ""
+  },
+  "cookieString": "或者直接粘贴完整的Cookie字符串（优先使用）",
+  
+  "_categorySection": "========== 分类配置 ==========",
+  "categories": [
+    {
+      "id": "category-id",
+      "name": "分类名称",
+      "url": "/category/path",
+      "children": [
+        {
+          "id": "sub-category-id",
+          "name": "子分类名称",
+          "url": "/category/sub-path"
+        }
+      ]
+    }
+  ],
+  
+  "_selectorSection": "========== CSS选择器配置（用于解析页面） ==========",
+  "selectors": {
+    "list": {
+      "_comment": "列表页选择器",
+      "container": ".item-container",
+      "title": ".item-title",
+      "cover": ".item-cover img",
+      "link": ".item-link",
+      "description": ".item-desc"
+    },
+    "detail": {
+      "_comment": "详情页选择器",
+      "title": ".detail-title",
+      "cover": ".detail-cover img",
+      "content": ".detail-content",
+      "author": ".detail-author",
+      "publishTime": ".detail-time"
+    }
+  },
+  
+  "_excludeSection": "========== 过滤配置 ==========",
+  "excludeCategories": [
+    "不需要的分类1",
+    "不需要的分类2"
+  ],
+  "excludeSubCategories": [
+    "不需要的子分类1"
+  ],
+  
+  "_apiSection": "========== API配置 ==========",
+  "endpoints": {
+    "list": "/api/list",
+    "detail": "/api/detail/{id}",
+    "search": "/api/search"
+  },
+  
+  "_syncSection": "========== 数据同步配置 ==========",
+  "apiBaseUrl": "http://47.239.212.188:8880",
+  "syncUid": "1765988676000011375",
+  "roleCode": "jianzhi",
+  "authUuid": "dd7d5b1b9f1348ec58eb3a1b884b93a2",
+  "crawlerToken": "UQ8k7P2nV6cXr9T1mK5Zs3YpH8dN4bJ0qL2vW7eA",
+  
+  "_storageSection": "========== 存储配置 ==========",
+  "r2WorkerUrl": "https://khjghjghjjh.xyz/upload",
+  "r2PreviewDomain": "https://khjghjghjjh.xyz",
+  "r2ImageEncryptionKey": "cYC8lOMnoUnqzeFhYcGCoLqNa44k9RMfmoorxeS7vIo=",
+  "r2ImageEncryptionIV": "QuOHSIr6OPbRxShwqkaGQw==",
+  
+  "_encryptSection": "========== 图片解密配置（如需要） ==========",
+  "imageDecryptKey": "",
+  "imageDecryptIV": ""
+}

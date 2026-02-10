@@ -1,0 +1,79 @@
+{
+  "crawlerModule": "uaa",
+  "siteType": "audio",
+  "baseUrl": "https://www.uaa.com",
+  "timeout": 10000,
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "pageSize": 48,
+  "maxConcurrent": 2,
+  "maxWorkers": 3,
+  "requestTimeout": 60000,
+  "loginRequired": true,
+  "loginUrl": "https://www.uaa.com/login",
+  "cloudflareProtection": true,
+  "useBrowserMode": false,
+  "skipDetailFetch": true,
+  "cookies": {
+    "token": "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MTE4Mzc5Njk4NzA0MTAyNjA0OCwidHlwZSI6ImN1c3RvbWVyIiwidGltZXN0YW1wIjoxNzcwNzA1NzUzMDQ4LCJleHAiOjE3NzEzMTA1NTN9.dOKUzOVk19L2zF8g8Ebd0XA9BGTMCU8ZSb0hHJy516k",
+    "SESSION": "NTYwMzIwMmYtYWY5NC00ODQxLWEzMDYtZWVhZmI3NGI3NDM3",
+    "Hm_tf_v3ixeqe37a6": "1770612774",
+    "Hm_lvt_v3ixeqe37a6": "1770612774",
+    "_ga": "GA1.1.650150967.1770612776",
+    "Hm_lpvt_v3ixeqe37a6": "1770705754",
+    "_ga_4BC3P9JVX3": "GS2.1.s1770705231$o9$g1$t1770705754$j32$l0$h1942628639",
+    "_ga_EDY4YZ85BM": "GS2.1.s1770705231$o9$g1$t1770705754$j32$l0$h1942628639"
+  },
+  "cookieString": "token=eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MTE4Mzc5Njk4NzA0MTAyNjA0OCwidHlwZSI6ImN1c3RvbWVyIiwidGltZXN0YW1wIjoxNzcwNzA1NzUzMDQ4LCJleHAiOjE3NzEzMTA1NTN9.dOKUzOVk19L2zF8g8Ebd0XA9BGTMCU8ZSb0hHJy516k; SESSION=NTYwMzIwMmYtYWY5NC00ODQxLWEzMDYtZWVhZmI3NGI3NDM3; Hm_tf_v3ixeqe37a6=1770612774; Hm_lvt_v3ixeqe37a6=1770612774; _ga=GA1.1.650150967.1770612776; Hm_lpvt_v3ixeqe37a6=1770705754; _ga_4BC3P9JVX3=GS2.1.s1770705231$o9$g1$t1770705754$j32$l0$h1942628639; _ga_EDY4YZ85BM=GS2.1.s1770705231$o9$g1$t1770705754$j32$l0$h1942628639",
+  "endpoints": {
+    "audioList": "/audio/list",
+    "audioDetail": "/audio/{id}",
+    "search": "/search"
+  },
+  "categories": [
+    {
+      "id": "audio",
+      "name": "有声",
+      "url": null,
+      "children": [
+        {
+          "id": "all",
+          "name": "全部有声",
+          "url": "/audio/list"
+        }
+      ]
+    }
+  ],
+  "selectors": {
+    "list": {
+      "container": "li.audio_li",
+      "title": ".title a",
+      "cover": ".cover_box img.cover",
+      "link": ".title a",
+      "cv": ".brief_box > .info_box:first-of-type .author",
+      "category": ".brief_box > .info_box:first-of-type .view span",
+      "updateTime": ".brief_box > .info_box:last-of-type .author",
+      "listenCount": ".brief_box > .info_box:last-of-type .view span:nth-of-type(2)",
+      "status": ""
+    },
+    "detail": {
+      "title": ".audio-title",
+      "cover": ".audio-cover img",
+      "cv": ".cv-name",
+      "category": ".category",
+      "status": ".status",
+      "description": ".description"
+    }
+  },
+  "apiBaseUrl": "http://47.239.212.188:8880",
+  "syncUid": "1765988676000011375",
+  "roleCode": "jianzhi",
+  "authUuid": "dd7d5b1b9f1348ec58eb3a1b884b93a2",
+  "crawlerToken": "UQ8k7P2nV6cXr9T1mK5Zs3YpH8dN4bJ0qL2vW7eA",
+  "r2WorkerUrl": "https://khjghjghjjh.xyz/upload",
+  "r2PreviewDomain": "https://khjghjghjjh.xyz",
+  "r2ImageEncryptionKey": "cYC8lOMnoUnqzeFhYcGCoLqNa44k9RMfmoorxeS7vIo=",
+  "r2ImageEncryptionIV": "QuOHSIr6OPbRxShwqkaGQw==",
+  "syncEnabled": true,
+  "syncPlatformId": null,
+  "syncApiUrl": "http://47.239.212.188:8880/api/video/sync-video"
+}

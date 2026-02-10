@@ -1,0 +1,36 @@
+# 依赖
+node_modules/
+
+# 打包产物
+dist/
+*.dmg
+*.zip
+*.app
+
+# 日志
+*.log
+npm-debug.log*
+
+# 系统文件
+.DS_Store
+*.swp
+*.swo
+
+# IDE
+.idea/
+.vscode/
+
+# Chromium（不提交浏览器文件，体积太大）
+chromium/
+
+# 临时文件
+*.tmp
+*.temp
+debug-*.html
+
+# 分发包
+分发包/
+51吃瓜浏览器-*.zip
+
+# 测试文件（根据需要可以保留或删除）
+# test-*.js

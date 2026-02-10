@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>51吃瓜分类浏览器</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style-additions.css">
+  <link rel="stylesheet" href="css/components/audio-list.css">
+  <link rel="stylesheet" href="css/components/audio-list-card.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- 左侧配置面板 -->
+    <aside class="config-panel" id="configPanel">
+      <div class="config-header">
+        <h2>⚙️ <span id="currentSiteName">配置信息</span></h2>
+        <button class="collapse-btn" id="collapseConfigBtn">◀</button>
+      </div>
+      
+      <div class="config-content" id="siteConfigContainer">
+        <!-- 配置内容将根据当前站点动态加载 -->
+        <div class="loading-config">
+          <p>正在加载配置...</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 右侧内容区 -->
+    <main class="content-area">
+      <!-- 顶部标题栏 -->
+      <header class="app-header">
+        <div class="header-container">
+          <div class="site-nav" id="siteNav">
+            <!-- 动态渲染站点导航 -->
+          </div>
+        </div>
+      </header>
+
+      <!-- 分类导航 -->
+      <nav class="category-nav" id="categoryNav">
+        <div class="nav-container">
+          <div class="loading-placeholder">
+            <div class="spinner"></div>
+            <span>正在加载分类...</span>
+          </div>
+        </div>
+      </nav>
+
+      <!-- 工具栏 -->
+      <div class="toolbar-container" id="toolbarContainer" style="display: none;">
+        <div class="toolbar-left">
+          <label class="checkbox-label">
+            <input type="checkbox" id="selectAll">
+            <span>全选</span>
+          </label>
+          <span class="selection-info" id="selectionInfo">已选择 0 项</span>
+        </div>
+        <div class="toolbar-right">
+          <button class="action-btn" id="checkStatusBtn">
+            <span class="icon">🔍</span>
+            <span class="text">检查同步状态</span>
+          </button>
+          <button class="action-btn primary" id="syncBtn" disabled>
+            <span class="icon">🔄</span>
+            <span class="text">同步选中项</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 内容列表和分页的滚动容器 -->
+      <div class="content-scroll-wrapper">
+        <!-- 内容列表 -->
+        <div class="content-list" id="contentList">
+          <div class="empty-state">
+            <p>请选择一个分类查看内容</p>
+          </div>
+        </div>
+
+        <!-- 分页 -->
+        <div class="pagination-container" id="paginationContainer" style="display: none;">
+          <div class="pagination-info">
+            <span id="paginationInfo">第 1 页，共 1 页</span>
+          </div>
+          <div class="pagination">
+            <button class="page-btn" id="firstPage" disabled>
+              <span>««</span> 首页
+            </button>
+            <button class="page-btn" id="prevPage" disabled>
+              <span>«</span> 上一页
+            </button>
+            <div class="page-numbers" id="pageNumbers"></div>
+            <button class="page-btn" id="nextPage" disabled>
+              下一页 <span>»</span>
+            </button>
+            <button class="page-btn" id="lastPage" disabled>
+              尾页 <span>»»</span>
+            </button>
+          </div>
+          <div class="page-jump">
+            <span>跳转到</span>
+            <input type="number" id="pageInput" min="1" placeholder="页码" />
+            <button class="page-btn" id="jumpBtn">GO</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 展开配置按钮（当配置面板收起时显示） -->
+  <button class="expand-config-btn" id="expandConfigBtn" style="display: none;">
+    <span>⚙️</span>
+  </button>
+
+  <!-- 加载遮罩层 -->
+  <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>加载中...</p>
+    </div>
+  </div>
+
+  <!-- 错误提示 -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/configManager.js"></script>
+  <script src="js/siteConfigManager.js"></script>
+  <script src="js/renderers/uaaRenderer.js"></script>
+  <script src="js/siteManager.js"></script>
+  <script src="js/syncState.js"></script>
+  <script src="js/syncUI.js"></script>
+  <script src="js/syncController.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/pagination.js"></script>
+  <script src="js/renderer.js"></script>
+</body>
+</html>
