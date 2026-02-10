@@ -426,9 +426,21 @@ async function createNewPage() {
     console.log('[BrowserHelper] Cookie已注入');
   }
   
-  // 设置超时
-  page.setDefaultTimeout(config.requestTimeout || 60000);
-  page.setDefaultNavigationTimeout(config.requestTimeout || 60000);
+  // 🚀 启用请求拦截，阻止加载不必要的资源（提速3-5秒）
+  await page.setRequestInterception(true);
+  page.on('request', (request) => {
+    const resourceType = request.resourceType();
+    // 只允许加载document和xhr，阻止图片、样式、字体、媒体等
+    if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+      request.abort();
+    } else {
+      request.continue();
+    }
+  });
+  
+  // 设置超时（🚀 从 60000 降低到 30000）
+  page.setDefaultTimeout(30000);
+  page.setDefaultNavigationTimeout(30000);
   
   return page;
 }
@@ -473,10 +485,10 @@ async function fetchWithBrowser(url, options = {}) {
       // ✅ 每次请求创建新的page实例
       currentPage = await createNewPage();
       
-      // 访问页面
+      // 访问页面（优化：只等待DOM加载，不等待所有资源）
       const response = await currentPage.goto(url, {
-        waitUntil: 'networkidle2',
-        timeout: config.requestTimeout || 60000
+        waitUntil: 'domcontentloaded',  // 🚀 从 networkidle2 改为 domcontentloaded，提速6-8秒
+        timeout: 30000  // 🚀 从 60000 改为 30000
       });
       
       // 检查响应状态
@@ -501,10 +513,7 @@ async function fetchWithBrowser(url, options = {}) {
         throw new Error(`HTTP ${status}`);
       }
       
-      // 等待页面加载完成
-      await sleep(2000);
-      
-      // 获取HTML
+      // 获取HTML（🚀 移除固定2秒延迟，提速2秒）
       const html = await currentPage.content();
       
       console.log(`[BrowserHelper] 成功获取页面 (${html.length} 字符)`);
