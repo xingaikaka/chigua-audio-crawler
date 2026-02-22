@@ -98,10 +98,8 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, '../src/index.html'));
 
-  // 开发模式下打开开发者工具
-  if (process.argv.includes('--dev')) {
-    mainWindow.webContents.openDevTools();
-  }
+  // 启动时打开开发者工具（Console 控制台）
+  mainWindow.webContents.openDevTools();
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -284,11 +282,27 @@ ipcMain.handle('get-content', async (event, { siteId, categoryUrl, page = 1, opt
     const crawler = getCrawlerInstance(currentSiteId);
     const content = await crawler.getContent(categoryUrl, page, options);
     
+    // 检查返回的数据结构
+    if (content && content.success && content.data) {
+      // YouTube 等站点返回 { success: true, data: { items: [...] } }
+      const itemCount = content.data.items ? content.data.items.length : 0;
+      console.log('[Main] 内容获取成功:', itemCount, '条');
+      return content;
+    } else if (content && content.items) {
+      // 51吃瓜等站点直接返回 { items: [...], pagination: {...} }
     console.log('[Main] 内容获取成功:', content.items.length, '条');
     return {
       success: true,
       data: content
     };
+    } else {
+      // 未知格式
+      console.log('[Main] 内容获取成功（未知格式）');
+      return {
+        success: true,
+        data: content
+      };
+    }
   } catch (error) {
     console.error('[Main] 获取内容失败:', error);
     return {

@@ -541,7 +541,6 @@ class ApiClient {
             // 添加模板要求的属性
             $img.attr('draggable', 'true');
             $img.attr('style', 'cursor: grab;');
-            // 清理不需要的属性
             $img.removeAttr('data-src');
             $img.removeAttr('data-xkrkllgl');
             $img.removeAttr('data-original');

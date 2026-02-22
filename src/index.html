@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="css/style-additions.css">
   <link rel="stylesheet" href="css/components/audio-list.css">
   <link rel="stylesheet" href="css/components/audio-list-card.css">
+  <link rel="stylesheet" href="css/components/youtube.css">
+  <link rel="stylesheet" href="css/components/youtube-pagination.css">
 </head>
 <body>
   <div class="app-container">
@@ -123,9 +125,29 @@
   <!-- 错误提示 -->
   <div class="toast" id="toast"></div>
 
+  <!-- 水印位置选择弹窗 -->
+  <div class="watermark-position-modal" id="watermarkPositionModal" style="display: none;">
+    <div class="watermark-position-dialog">
+      <div class="watermark-position-header">
+        <h3>🖱️ 拖拽水印到目标位置</h3>
+        <button type="button" class="watermark-modal-close" id="watermarkModalClose">×</button>
+      </div>
+      <div class="watermark-position-body">
+        <div class="watermark-preview-canvas" id="watermarkPreviewCanvas">
+          <img class="watermark-draggable" id="watermarkDraggable" draggable="false" alt="水印" />
+        </div>
+      </div>
+      <div class="watermark-position-footer">
+        <button type="button" class="btn-secondary" id="watermarkPositionCancel">取消</button>
+        <button type="button" class="btn-primary" id="watermarkPositionConfirm">确定</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/configManager.js"></script>
   <script src="js/siteConfigManager.js"></script>
   <script src="js/renderers/uaaRenderer.js"></script>
+  <script src="js/renderers/youtubeRenderer.js"></script>
   <script src="js/siteManager.js"></script>
   <script src="js/syncState.js"></script>
   <script src="js/syncUI.js"></script>

@@ -32,6 +32,17 @@
       "crawlerModule": "tianya",
       "rendererType": "grid",
       "enabled": false
+    },
+    {
+      "id": "youtube",
+      "name": "YouTube",
+      "icon": "📺",
+      "type": "video",
+      "description": "YouTube视频内容浏览",
+      "configFile": "youtube.json",
+      "crawlerModule": "youtube",
+      "rendererType": "grid",
+      "enabled": true
     }
   ],
   "defaultSite": "51chigua"

@@ -228,8 +228,19 @@ class SyncController {
       
       this.showToast(`开始同步 ${selectedItems.length} 条内容...`, 'info');
       
-      // 获取配置
-      const config = window.configManager.getAll();
+      // 获取配置：51吃瓜需确保使用最新站点配置（含水印）
+      let config = window.configManager.getAll();
+      const siteId = window.currentState?.currentSiteId;
+      if (siteId === '51chigua') {
+        try {
+          const siteConfigResult = await window.electronAPI.getSiteConfig(siteId);
+          if (siteConfigResult.success && siteConfigResult.data) {
+            config = { ...config, ...siteConfigResult.data };
+          }
+        } catch (e) {
+          console.warn('[Sync] 获取51吃瓜站点配置失败，使用缓存配置:', e);
+        }
+      }
       
       // 调用同步API
       const result = await window.electronAPI.startSync(selectedItems, config);

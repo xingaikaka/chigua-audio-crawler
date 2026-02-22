@@ -20,8 +20,25 @@ class SiteConfigManager {
         if (e.target.id === 'saveConfigBtn' || e.target.closest('#saveConfigBtn')) {
           this.saveConfig();
         }
+        if (e.target.id === 'watermarkUploadBtn' || e.target.closest('#watermarkUploadBtn')) {
+          document.getElementById('watermarkFileInput')?.click();
+        }
+        const posBtn = e.target.closest('.btn-watermark-position');
+        if (posBtn) {
+          this.openPositionModal(parseInt(posBtn.dataset.idx));
+        }
+        const delBtn = e.target.closest('.btn-watermark-delete');
+        if (delBtn) {
+          this.removeWatermarkCard(parseInt(delBtn.dataset.idx));
+        }
       });
     }
+    document.getElementById('watermarkModalClose')?.addEventListener('click', () => this.closePositionModal());
+    document.getElementById('watermarkPositionCancel')?.addEventListener('click', () => this.closePositionModal());
+    document.getElementById('watermarkPositionConfirm')?.addEventListener('click', () => this.confirmPosition());
+    document.addEventListener('change', (e) => {
+      if (e.target.id === 'watermarkFileInput') this.handleWatermarkFileSelect(e.target);
+    });
   }
 
   /**
@@ -73,6 +90,35 @@ class SiteConfigManager {
     } else {
       container.innerHTML = '<p class="empty-hint">该站点暂无可配置项</p>';
     }
+  }
+
+  /**
+   * 渲染水印卡片列表
+   */
+  renderWatermarkCards(watermarks) {
+    return watermarks.map((wm, idx) => `
+      <div class="watermark-card" data-idx="${idx}">
+        <label class="watermark-enable-wrap">
+          <input type="checkbox" class="watermark-enabled" ${wm.enabled !== false ? 'checked' : ''}>
+          <span class="watermark-enable-label">启用</span>
+        </label>
+        <div class="watermark-card-preview">
+          <img src="${wm.imageData || ''}" alt="水印${idx + 1}" onerror="this.style.display='none'">
+        </div>
+        <div class="watermark-card-controls">
+          <div class="watermark-size-row">
+            <label>宽</label>
+            <input type="number" class="watermark-width" value="${wm.width || 300}" min="1" max="9999" placeholder="像素">
+            <label>高</label>
+            <input type="number" class="watermark-height" value="${wm.height || 150}" min="1" max="9999" placeholder="像素">
+          </div>
+          <button type="button" class="btn-watermark-position" data-idx="${idx}">📍 选择位置</button>
+          <button type="button" class="btn-watermark-delete" data-idx="${idx}">🗑️ 删除</button>
+        </div>
+        <input type="hidden" class="watermark-x-ratio" value="${wm.xRatio ?? 0.8}">
+        <input type="hidden" class="watermark-y-ratio" value="${wm.yRatio ?? 0.8}">
+      </div>
+    `).join('');
   }
 
   /**
@@ -143,6 +189,20 @@ class SiteConfigManager {
           <label>解密IV</label>
           <input type="text" id="config_imageDecryptIV" value="${config.imageDecryptIV || ''}" 
                  placeholder="57_55_98_54_48_51_57_52_97_98_99_50_102_98_101_49">
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h3>🖼️ 水印配置</h3>
+        <p class="config-hint">最多可上传 3 张水印图片，勾选「启用」的水印会叠加到同步图片上。保存后下次打开可继续使用。</p>
+        <input type="file" id="watermarkFileInput" accept="image/*" style="display: none;">
+        <div class="watermark-upload-area" id="watermarkUploadArea">
+          <button type="button" class="btn-watermark-upload" id="watermarkUploadBtn">
+            📤 上传水印图片
+          </button>
+        </div>
+        <div class="watermark-cards" id="watermarkCardsContainer">
+          ${this.renderWatermarkCards(config.watermarks || [])}
         </div>
       </div>
 
@@ -305,6 +365,235 @@ class SiteConfigManager {
   }
 
   /**
+   * 处理水印图片选择
+   */
+  handleWatermarkFileSelect(fileInput) {
+    const file = fileInput?.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result;
+      if (!base64) return;
+      const container = document.getElementById('watermarkCardsContainer');
+      const uploadArea = document.getElementById('watermarkUploadArea');
+      const cards = container?.querySelectorAll('.watermark-card') || [];
+      if (cards.length >= 3) {
+        this.showToast('最多只能上传 3 张水印图片', 'warning');
+        return;
+      }
+      const idx = cards.length;
+      const cardHtml = `
+        <div class="watermark-card" data-idx="${idx}">
+          <label class="watermark-enable-wrap">
+            <input type="checkbox" class="watermark-enabled" checked>
+            <span class="watermark-enable-label">启用</span>
+          </label>
+          <div class="watermark-card-preview">
+            <img src="${base64}" alt="水印${idx + 1}">
+          </div>
+          <div class="watermark-card-controls">
+            <div class="watermark-size-row">
+              <label>宽</label>
+              <input type="number" class="watermark-width" value="300" min="1" max="9999" placeholder="像素">
+              <label>高</label>
+              <input type="number" class="watermark-height" value="150" min="1" max="9999" placeholder="像素">
+            </div>
+            <button type="button" class="btn-watermark-position" data-idx="${idx}">📍 选择位置</button>
+            <button type="button" class="btn-watermark-delete" data-idx="${idx}">🗑️ 删除</button>
+          </div>
+          <input type="hidden" class="watermark-x-ratio" value="0.8">
+          <input type="hidden" class="watermark-y-ratio" value="0.8">
+        </div>
+      `;
+      container?.insertAdjacentHTML('beforeend', cardHtml);
+      this.updateWatermarkCardIndices();
+      uploadArea.style.display = cards.length >= 2 ? 'none' : 'block';
+      fileInput.value = '';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /**
+   * 更新水印卡片索引
+   */
+  updateWatermarkCardIndices() {
+    const cards = document.querySelectorAll('.watermark-card');
+    cards.forEach((card, idx) => {
+      card.dataset.idx = idx;
+      card.querySelector('.btn-watermark-position')?.setAttribute('data-idx', idx);
+      card.querySelector('.btn-watermark-delete')?.setAttribute('data-idx', idx);
+    });
+    const uploadArea = document.getElementById('watermarkUploadArea');
+    if (uploadArea) uploadArea.style.display = cards.length >= 3 ? 'none' : 'block';
+  }
+
+  /**
+   * 删除水印卡片
+   */
+  removeWatermarkCard(idx) {
+    const card = document.querySelector(`.watermark-card[data-idx="${idx}"]`);
+    if (card) {
+      card.remove();
+      this.updateWatermarkCardIndices();
+    }
+  }
+
+  /**
+   * 打开位置选择弹窗
+   */
+  openPositionModal(idx) {
+    const card = document.querySelector(`.watermark-card[data-idx="${idx}"]`);
+    if (!card) return;
+    const img = card.querySelector('.watermark-card-preview img');
+    const imgSrc = img?.src;
+    if (!imgSrc) {
+      this.showToast('请先上传水印图片', 'warning');
+      return;
+    }
+    this._positionModalCardIdx = idx;
+    const modal = document.getElementById('watermarkPositionModal');
+    const canvas = document.getElementById('watermarkPreviewCanvas');
+    const draggable = document.getElementById('watermarkDraggable');
+    if (!modal || !canvas || !draggable) return;
+
+    modal.style.display = 'flex';
+    draggable.src = imgSrc;
+    const xRatio = parseFloat(card.querySelector('.watermark-x-ratio')?.value || 0.8);
+    const yRatio = parseFloat(card.querySelector('.watermark-y-ratio')?.value || 0.8);
+    const w = parseInt(card.querySelector('.watermark-width')?.value || 300);
+    const h = parseInt(card.querySelector('.watermark-height')?.value || 150);
+
+    const applyPosition = () => {
+      const rect = canvas.getBoundingClientRect();
+      const previewW = Math.min(w, Math.floor(rect.width * 0.25));
+      draggable.style.width = previewW + 'px';
+      draggable.style.height = 'auto';
+      const left = Math.max(0, Math.min(rect.width - previewW, rect.width * xRatio - previewW / 2));
+      const top = Math.max(0, Math.min(rect.height - 40, rect.height * yRatio - 20));
+      draggable.style.left = left + 'px';
+      draggable.style.top = top + 'px';
+    };
+    draggable.onload = () => requestAnimationFrame(applyPosition);
+    requestAnimationFrame(() => {
+      applyPosition();
+      if (draggable.complete) applyPosition();
+    });
+
+    this._positionModalDragging = false;
+    this._positionModalStartX = 0;
+    this._positionModalStartY = 0;
+    this._positionModalElemLeft = 0;
+    this._positionModalElemTop = 0;
+
+    const getCanvasRect = () => canvas.getBoundingClientRect();
+
+    const onMouseDown = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this._positionModalDragging = true;
+      this._positionModalStartX = e.clientX;
+      this._positionModalStartY = e.clientY;
+      this._positionModalElemLeft = parseFloat(draggable.style.left) || 0;
+      this._positionModalElemTop = parseFloat(draggable.style.top) || 0;
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    };
+    const onMouseMove = (e) => {
+      if (!this._positionModalDragging) return;
+      e.preventDefault();
+      const rect = getCanvasRect();
+      const dx = e.clientX - this._positionModalStartX;
+      const dy = e.clientY - this._positionModalStartY;
+      const elemW = draggable.offsetWidth || 50;
+      const elemH = draggable.offsetHeight || 30;
+      const newLeft = Math.max(0, Math.min(rect.width - elemW, this._positionModalElemLeft + dx));
+      const newTop = Math.max(0, Math.min(rect.height - elemH, this._positionModalElemTop + dy));
+      draggable.style.left = newLeft + 'px';
+      draggable.style.top = newTop + 'px';
+      this._positionModalStartX = e.clientX;
+      this._positionModalStartY = e.clientY;
+      this._positionModalElemLeft = newLeft;
+      this._positionModalElemTop = newTop;
+    };
+    const onMouseUp = () => {
+      this._positionModalDragging = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+    draggable.onmousedown = onMouseDown;
+    draggable.ondragstart = () => false;
+  }
+
+  /**
+   * 关闭位置选择弹窗
+   */
+  closePositionModal() {
+    document.getElementById('watermarkPositionModal').style.display = 'none';
+  }
+
+  /**
+   * 确认位置选择
+   */
+  confirmPosition() {
+    const idx = this._positionModalCardIdx;
+    const card = document.querySelector(`.watermark-card[data-idx="${idx}"]`);
+    const canvas = document.getElementById('watermarkPreviewCanvas');
+    const draggable = document.getElementById('watermarkDraggable');
+    if (!card || !canvas || !draggable) {
+      this.closePositionModal();
+      return;
+    }
+    const rect = canvas.getBoundingClientRect();
+    const xRatio = Math.max(0, Math.min(1, (parseFloat(draggable.style.left) || 0) / rect.width));
+    const yRatio = Math.max(0, Math.min(1, (parseFloat(draggable.style.top) || 0) / rect.height));
+    card.querySelector('.watermark-x-ratio').value = xRatio.toFixed(4);
+    card.querySelector('.watermark-y-ratio').value = yRatio.toFixed(4);
+    this.closePositionModal();
+    this.showToast('位置已更新', 'success');
+  }
+
+  /**
+   * 收集水印配置（仅包含启用的水印）
+   */
+  collectWatermarkConfig() {
+    const cards = document.querySelectorAll('.watermark-card');
+    const watermarks = [];
+    cards.forEach((card) => {
+      const enabled = card.querySelector('.watermark-enabled')?.checked;
+      if (!enabled) return;
+      const img = card.querySelector('.watermark-card-preview img');
+      const src = img?.src;
+      if (!src || !src.startsWith('data:')) return;
+      const width = parseInt(card.querySelector('.watermark-width')?.value || 300);
+      const height = parseInt(card.querySelector('.watermark-height')?.value || 150);
+      const xRatio = parseFloat(card.querySelector('.watermark-x-ratio')?.value || 0.8);
+      const yRatio = parseFloat(card.querySelector('.watermark-y-ratio')?.value || 0.8);
+      watermarks.push({ imageData: src, width, height, xRatio, yRatio, enabled: true });
+    });
+    return watermarks;
+  }
+
+  /**
+   * 收集全部水印配置（含未启用的，用于持久化存储）
+   */
+  collectAllWatermarkConfig() {
+    const cards = document.querySelectorAll('.watermark-card');
+    const watermarks = [];
+    cards.forEach((card) => {
+      const img = card.querySelector('.watermark-card-preview img');
+      const src = img?.src;
+      if (!src || !src.startsWith('data:')) return;
+      const enabled = card.querySelector('.watermark-enabled')?.checked;
+      const width = parseInt(card.querySelector('.watermark-width')?.value || 300);
+      const height = parseInt(card.querySelector('.watermark-height')?.value || 150);
+      const xRatio = parseFloat(card.querySelector('.watermark-x-ratio')?.value || 0.8);
+      const yRatio = parseFloat(card.querySelector('.watermark-y-ratio')?.value || 0.8);
+      watermarks.push({ imageData: src, width, height, xRatio, yRatio, enabled });
+    });
+    return watermarks;
+  }
+
+  /**
    * 保存配置
    */
   async saveConfig() {
@@ -314,6 +603,11 @@ class SiteConfigManager {
       // 收集表单数据
       const updatedConfig = { ...this.currentConfig };
       
+      // 51吃瓜站点：收集水印配置（含未启用的，全部持久化存储）
+      if (this.currentSiteId === '51chigua') {
+        updatedConfig.watermarks = this.collectAllWatermarkConfig();
+      }
+
       // 通用配置项
       const configFields = [
         'apiBaseUrl', 'syncUid', 'roleCode', 'authUuid', 'crawlerToken',

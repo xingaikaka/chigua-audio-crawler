@@ -1,0 +1,87 @@
+{
+  "crawlerModule": "youtube",
+  "siteType": "video",
+  "baseUrl": "https://www.youtube.com",
+  "timeout": 10000,
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "pageSize": 30,
+  "maxConcurrent": 2,
+  "maxWorkers": 3,
+  "requestTimeout": 30000,
+  
+  "searchEnabled": true,
+  "searchDefaultKeyword": "音乐",
+  "searchLimit": 20,
+  
+  "categories": [
+    {
+      "id": "search",
+      "name": "搜索",
+      "icon": "🔍",
+      "type": "search"
+    },
+    {
+      "id": "music",
+      "name": "音乐",
+      "icon": "🎵",
+      "keyword": "music"
+    },
+    {
+      "id": "gaming",
+      "name": "游戏",
+      "icon": "🎮",
+      "keyword": "gaming"
+    },
+    {
+      "id": "entertainment",
+      "name": "娱乐",
+      "icon": "🎬",
+      "keyword": "entertainment"
+    },
+    {
+      "id": "education",
+      "name": "教育",
+      "icon": "📚",
+      "keyword": "education"
+    },
+    {
+      "id": "sports",
+      "name": "体育",
+      "icon": "⚽",
+      "keyword": "sports"
+    },
+    {
+      "id": "news",
+      "name": "新闻",
+      "icon": "📰",
+      "keyword": "news"
+    }
+  ],
+  
+  "sortOptions": [
+    {
+      "id": "relevance",
+      "name": "相关性",
+      "value": "relevance"
+    },
+    {
+      "id": "date",
+      "name": "最新",
+      "value": "upload_date"
+    },
+    {
+      "id": "views",
+      "name": "播放量",
+      "value": "view_count"
+    },
+    {
+      "id": "rating",
+      "name": "评分",
+      "value": "rating"
+    }
+  ],
+  
+  "syncEnabled": false,
+  "syncPlatformId": null,
+  "apiBaseUrl": null
+}

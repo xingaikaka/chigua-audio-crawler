@@ -1,0 +1,503 @@
+/**
+ * YouTube 分页组件优化样式
+ * 现代化、美观的分页设计
+ */
+
+/* ========== 分页主容器 ========== */
+.youtube-pagination {
+  margin-top: 40px;
+  padding: 0;
+}
+
+.pagination-container {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 28px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* ========== 顶部信息栏 ========== */
+.pagination-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+}
+
+.pagination-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stats-icon {
+  font-size: 20px;
+  filter: drop-shadow(0 2px 4px rgba(255, 0, 0, 0.3));
+}
+
+.stats-text {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+}
+
+.stats-text strong {
+  color: #ff3333;
+  font-weight: 800;
+  font-size: 16px;
+  text-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
+}
+
+.api-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.15) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 24px;
+  font-size: 12px;
+  color: #10b981;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+}
+
+.status-icon {
+  font-size: 16px;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* ========== 分页控制区 ========== */
+.pagination-controls-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+/* 上一页/下一页按钮 */
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  min-width: 120px;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.pagination-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.pagination-btn:hover::before {
+  left: 100%;
+}
+
+.pagination-btn .btn-icon {
+  font-size: 14px;
+  transition: transform 0.4s ease;
+}
+
+.pagination-btn .btn-text {
+  position: relative;
+  z-index: 1;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(255, 0, 0, 0.4) 0%, rgba(204, 0, 0, 0.3) 100%);
+  border-color: rgba(255, 0, 0, 0.8);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(255, 0, 0, 0.4);
+}
+
+.pagination-btn.prev-btn:hover:not(:disabled) .btn-icon {
+  transform: translateX(-4px);
+}
+
+.pagination-btn.next-btn:hover:not(:disabled) .btn-icon {
+  transform: translateX(4px);
+}
+
+.pagination-btn:active:not(:disabled) {
+  transform: translateY(-1px) scale(0.98);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pagination-btn:disabled::before {
+  display: none;
+}
+
+/* ========== 中央区域 ========== */
+.pagination-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.pagination-current-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.current-page-display {
+  font-weight: 600;
+}
+
+.current-page-display strong {
+  font-size: 20px;
+  color: #ff3333;
+  font-weight: 900;
+}
+
+.has-more-indicator {
+  color: #10b981;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.no-more-indicator {
+  color: #ff9966;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* API 限制提示 */
+.api-limit-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: rgba(255, 153, 102, 0.15);
+  border: 1px solid rgba(255, 153, 102, 0.3);
+  border-radius: 12px;
+  margin-top: 12px;
+}
+
+.notice-icon {
+  font-size: 18px;
+}
+
+.notice-text {
+  font-size: 14px;
+  color: #ff9966;
+  font-weight: 600;
+}
+
+/* ========== 页码按钮 ========== */
+.page-numbers {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.page-number-btn {
+  min-width: 48px;
+  height: 48px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.95);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.page-number-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 0, 0, 0.3) 0%, transparent 70%);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease;
+}
+
+.page-number-btn:hover::before {
+  width: 150px;
+  height: 150px;
+}
+
+.page-number-btn .page-num {
+  position: relative;
+  z-index: 1;
+}
+
+.page-number-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-3px) scale(1.08);
+  box-shadow: 0 6px 16px rgba(255, 255, 255, 0.15);
+}
+
+.page-number-btn.active {
+  background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+  border-color: #ff0000;
+  color: white;
+  font-weight: 900;
+  box-shadow: 
+    0 8px 24px rgba(255, 0, 0, 0.6),
+    0 0 0 5px rgba(255, 0, 0, 0.15),
+    inset 0 2px 4px rgba(255, 255, 255, 0.2);
+  transform: scale(1.15);
+  cursor: default;
+}
+
+.page-number-btn.active::before {
+  display: none;
+}
+
+.page-number-btn.active:hover {
+  transform: scale(1.15);
+}
+
+.page-dots {
+  color: rgba(255, 255, 255, 0.35);
+  padding: 0 8px;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  user-select: none;
+}
+
+/* ========== 跳转控制 ========== */
+.page-jump {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(5px);
+}
+
+.jump-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+}
+
+.page-input {
+  width: 80px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.page-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.page-input:focus {
+  outline: none;
+  border-color: rgba(255, 0, 0, 0.8);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 0 0 5px rgba(255, 0, 0, 0.15),
+    0 4px 12px rgba(255, 0, 0, 0.3);
+  transform: scale(1.05);
+}
+
+.jump-btn {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, rgba(255, 0, 0, 0.4) 0%, rgba(204, 0, 0, 0.3) 100%);
+  color: white;
+  border: 2px solid rgba(255, 0, 0, 0.6);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+}
+
+.jump-btn:hover {
+  background: linear-gradient(135deg, rgba(255, 0, 0, 0.6) 0%, rgba(204, 0, 0, 0.5) 100%);
+  border-color: rgba(255, 0, 0, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 0, 0, 0.5);
+}
+
+.jump-btn:active {
+  transform: translateY(0);
+}
+
+/* ========== 底部提示信息 ========== */
+.pagination-footer {
+  padding-top: 24px;
+  border-top: 2px solid rgba(255, 255, 255, 0.08);
+}
+
+.pagination-hints {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.pagination-hint {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hint-item {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  padding-left: 8px;
+}
+
+/* ========== 响应式设计 ========== */
+@media (max-width: 1024px) {
+  .pagination-container {
+    padding: 20px;
+  }
+
+  .pagination-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .pagination-controls-wrapper {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .pagination-btn {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .page-numbers {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .pagination-container {
+    padding: 16px;
+  }
+
+  .stats-text {
+    font-size: 13px;
+  }
+
+  .page-number-btn {
+    min-width: 42px;
+    height: 42px;
+    font-size: 14px;
+  }
+
+  .pagination-btn {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+
+  .page-jump {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .page-input {
+    width: 70px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pagination-container {
+    padding: 12px;
+  }
+
+  .pagination-header {
+    gap: 12px;
+  }
+
+  .page-number-btn {
+    min-width: 38px;
+    height: 38px;
+    font-size: 13px;
+  }
+
+  .pagination-btn .btn-text {
+    display: none;
+  }
+
+  .pagination-btn {
+    min-width: 50px;
+    padding: 12px;
+  }
+}

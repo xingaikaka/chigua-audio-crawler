@@ -25,6 +25,9 @@ class CrawlerFactory {
         case 'tianya':
           return this.createTianyaCrawler(siteConfig);
         
+        case 'youtube':
+          return this.createYouTubeCrawler(siteConfig);
+        
         default:
           throw new Error(`未知的爬虫模块: ${crawlerModule}`);
       }
@@ -85,6 +88,45 @@ class CrawlerFactory {
    */
   static createTianyaCrawler(config) {
     throw new Error('天涯爬虫尚未实现');
+  }
+  
+  /**
+   * 创建YouTube爬虫实例
+   */
+  static createYouTubeCrawler(config) {
+    const { YouTubeSearchParser } = require('../youtube');
+    const parser = new YouTubeSearchParser(config);
+    
+    return {
+      type: 'youtube',
+      config: config,
+      
+      getCategories: () => {
+        console.log('[YouTubeCrawler] 获取分类列表');
+        // 返回配置中的分类
+        return {
+          success: true,
+          data: config.categories || []
+        };
+      },
+      
+      getContent: async (categoryUrl, page, options = {}) => {
+        console.log('[YouTubeCrawler] 获取视频列表:', categoryUrl, 'page:', page, 'options:', options);
+        
+        // 如果有搜索关键词，使用搜索
+        if (options.keyword) {
+          return await parser.search(options.keyword, page, options);
+        }
+        
+        // 如果有分类关键词，使用分类搜索
+        if (options.categoryKeyword) {
+          return await parser.getCategoryVideos(options.categoryKeyword, page);
+        }
+        
+        // 默认返回热门视频
+        return await parser.getTrending('music', page);
+      }
+    };
   }
 }
 

@@ -127,7 +127,7 @@ class SiteManager {
   initRenderer(site) {
     const rendererType = site.rendererType || 'grid';
     
-    console.log(`[SiteManager] 初始化渲染器: ${rendererType}`);
+    console.log(`[SiteManager] 初始化渲染器: ${rendererType}, 站点类型: ${site.type}, 站点ID: ${site.id}`);
     
     if (rendererType === 'list' && site.type === 'audio') {
       // UAA有声小说使用列表渲染器
@@ -138,6 +138,17 @@ class SiteManager {
         console.log('[SiteManager] ✓ UAAAudioRenderer 创建成功');
       } else {
         console.error('[SiteManager] ✗ window.UAAAudioRenderer 不存在！');
+        window.currentState.currentRenderer = null;
+      }
+    } else if (site.id === 'youtube') {
+      // YouTube 使用专用渲染器
+      console.log('[SiteManager] >>> 创建 YouTubeRenderer');
+      console.log('[SiteManager] window.YouTubeRenderer 存在:', !!window.YouTubeRenderer);
+      if (window.YouTubeRenderer) {
+        window.currentState.currentRenderer = new window.YouTubeRenderer();
+        console.log('[SiteManager] ✓ YouTubeRenderer 创建成功');
+      } else {
+        console.error('[SiteManager] ✗ window.YouTubeRenderer 不存在！');
         window.currentState.currentRenderer = null;
       }
     } else {

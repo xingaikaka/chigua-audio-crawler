@@ -8,6 +8,7 @@ const imageDecryptor = require('./imageDecryptor');
 const R2Uploader = require('./r2Uploader');
 const M3U8Processor = require('./m3u8Processor');
 const ApiClient = require('./apiClient');
+const { addWatermarksToImage } = require('./watermark');
 
 /**
  * 任务状态枚举
@@ -75,6 +76,9 @@ class SyncTask {
     console.log(`║   - roleCode: ${this.config.roleCode}`);
     console.log(`║   - authUuid: ${this.config.authUuid || '未设置'}`);
     console.log(`║   - apiToken: ${this.config.apiToken ? '已设置' : '未设置'}`);
+    const wmCount = (this.config.watermarks || []).length;
+    const wmEnabled = (this.config.watermarks || []).filter(w => w.enabled !== false).length;
+    console.log(`║   - 水印配置: ${wmCount} 个 (启用 ${wmEnabled} 个)`);
     console.log(`╚══════════════════════════════════════════════════════════════╝\n`);
     
     try {
@@ -294,20 +298,12 @@ class SyncTask {
         
         try {
           console.log(`[Task ${this.id}]   开始下载图片...`);
-          const imageData = await imageDecryptor.downloadAndDecryptImageBytes(imageUrl);
+          let imageData = await imageDecryptor.downloadAndDecryptImageBytes(imageUrl);
           
           if (imageData) {
             console.log(`[Task ${this.id}]   ✅ 图片下载成功，大小: ${(imageData.length / 1024).toFixed(2)} KB`);
             
-            // 生成图片文件名（匹配模板格式：uploads/{timestamp1}_{uuid1}_{timestamp2}_{uuid2}.{ext}）
-            // 正确格式：uploads/1770439953952_6a092732_1770439949656_46qhzw0fh.png
-            // 分析：timestamp1_uuid1_timestamp2_uuid2.ext（四段）
-            const timestamp1 = Date.now();
-            const uuid1 = Math.random().toString(36).substring(2, 10); // 8位
-            const timestamp2 = Date.now() - Math.floor(Math.random() * 10000); // 比timestamp1小的随机时间戳
-            const uuid2 = Math.random().toString(36).substring(2, 11); // 9位
-            
-            // 从原始URL提取文件扩展名
+            // 从原始URL提取文件扩展名（需在水印判断之前）
             let fileExt = 'jpg';
             try {
               const urlObj = new URL(imageUrl);
@@ -320,12 +316,54 @@ class SyncTask {
                 }
               }
             } catch (e) {
-              // URL解析失败，使用默认值
               console.log(`[Task ${this.id}]   URL解析失败，使用默认扩展名: ${fileExt}`);
             }
             
-            // 生成文件名：{timestamp1}_{uuid1}_{timestamp2}_{uuid2}.{ext}
-            // 格式：1770439953952_6a092732_1770439949656_46qhzw0fh.png（四段）
+            // 添加水印：根据实际 buffer 格式判断（不依赖 URL 扩展名），仅使用启用的水印
+            const allWatermarks = this.config.watermarks || [];
+            const watermarks = allWatermarks.filter(w => w.enabled !== false);
+            if (allWatermarks.length > 0 && watermarks.length === 0) {
+              console.log(`[Task ${this.id}]   ℹ️ 已配置 ${allWatermarks.length} 个水印，但均未启用`);
+            }
+            const isJpegBuffer = imageData[0] === 0xFF && imageData[1] === 0xD8;
+            const isPngBuffer = imageData[0] === 0x89 && imageData[1] === 0x50 && imageData[2] === 0x4E && imageData[3] === 0x47;
+            const canAddWatermark = watermarks.length > 0 && (isJpegBuffer || isPngBuffer);
+            if (canAddWatermark) {
+              try {
+                console.log(`[Task ${this.id}]   🖼️ 添加水印 (${watermarks.length} 个)...`);
+                const watermarkedData = await addWatermarksToImage(imageData, watermarks);
+                if (watermarkedData) {
+                  const origSize = imageData.length;
+                  imageData = watermarkedData;
+                  fileExt = (imageData[0] === 0xFF && imageData[1] === 0xD8) ? 'jpg' : 'png';
+                  console.log(`[Task ${this.id}]   ✅ 水印添加成功 (原图 ${(origSize/1024).toFixed(1)}KB -> 水印后 ${(imageData.length/1024).toFixed(1)}KB)`);
+                  // 调试：dev 模式下首张水印图保存到项目目录供验证
+                  if (i === 0 && (process.argv.includes('--dev') || process.env.DEBUG_WATERMARK)) {
+                    const fs = require('fs');
+                    const path = require('path');
+                    const debugDir = path.join(__dirname, '..', 'debug-watermark-output');
+                    if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
+                    const debugPath = path.join(debugDir, `watermarked-${Date.now()}.${fileExt}`);
+                    fs.writeFileSync(debugPath, imageData);
+                    console.log(`[Task ${this.id}]   📁 调试: 水印图已保存到 ${debugPath}`);
+                  }
+                } else {
+                  console.log(`[Task ${this.id}]   ⚠️ 水印添加失败，使用原图`);
+                }
+              } catch (wmErr) {
+                console.error(`[Task ${this.id}]   ⚠️ 水印处理异常:`, wmErr.message);
+              }
+            } else if (watermarks.length > 0 && !isJpegBuffer && !isPngBuffer) {
+              console.log(`[Task ${this.id}]   ⏭️ 跳过水印（图片格式非 JPEG/PNG，当前 buffer 格式无法处理）`);
+            } else if (allWatermarks.length === 0 && i === 0) {
+              console.log(`[Task ${this.id}]   ℹ️ 未配置水印，请在 51吃瓜 站点配置中上传水印并保存`);
+            }
+            
+            // 生成图片文件名：{timestamp1}_{uuid1}_{timestamp2}_{uuid2}.{ext}（与 GitHub 版本一致）
+            const timestamp1 = Date.now();
+            const uuid1 = Math.random().toString(36).substring(2, 10);
+            const timestamp2 = Date.now() - Math.floor(Math.random() * 10000);
+            const uuid2 = Math.random().toString(36).substring(2, 11);
             const imageFilename = `${timestamp1}_${uuid1}_${timestamp2}_${uuid2}.${fileExt}`;
             // 上传路径：uploads/{filename}
             const uploadPath = `uploads/${imageFilename}`;

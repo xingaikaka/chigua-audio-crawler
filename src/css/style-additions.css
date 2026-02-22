@@ -166,6 +166,232 @@
   transition: all 0.3s;
 }
 
+.config-hint {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 12px;
+}
+
+/* 水印配置 */
+.watermark-upload-area {
+  margin-bottom: 12px;
+}
+
+.btn-watermark-upload {
+  padding: 10px 16px;
+  background: #2d2d2d;
+  border: 1px dashed #555;
+  border-radius: 8px;
+  color: #b0b0b0;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.btn-watermark-upload:hover {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.watermark-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.watermark-card {
+  background: #252525;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.watermark-enable-wrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #b0b0b0;
+}
+
+.watermark-enable-wrap input {
+  width: auto;
+  cursor: pointer;
+}
+
+.watermark-enable-label {
+  white-space: nowrap;
+}
+
+.watermark-card-preview {
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #1a1a1a;
+}
+
+.watermark-card-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.watermark-card-controls {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.watermark-size-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.watermark-size-row label {
+  font-size: 12px;
+  color: #888;
+}
+
+.watermark-size-row input {
+  width: 70px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+.btn-watermark-position,
+.btn-watermark-delete {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid #444;
+  background: #2d2d2d;
+  color: #b0b0b0;
+  align-self: flex-start;
+}
+
+.btn-watermark-position:hover,
+.btn-watermark-delete:hover {
+  background: #333;
+  color: #fff;
+}
+
+.btn-watermark-delete:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* 水印位置选择弹窗 */
+.watermark-position-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.watermark-position-dialog {
+  background: #1a1a1a;
+  border-radius: 12px;
+  border: 1px solid #333;
+  width: 90%;
+  max-width: 900px;
+  overflow: hidden;
+}
+
+.watermark-position-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.watermark-position-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #fff;
+}
+
+.watermark-modal-close {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0 8px;
+  line-height: 1;
+}
+
+.watermark-modal-close:hover {
+  color: #fff;
+}
+
+.watermark-position-body {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.watermark-preview-canvas {
+  width: 800px;
+  height: 500px;
+  min-width: 400px;
+  min-height: 300px;
+  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+  border: 2px dashed #555;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.watermark-draggable {
+  position: absolute;
+  cursor: move;
+  max-width: 150px;
+  max-height: 80px;
+  object-fit: contain;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.watermark-position-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #333;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.btn-secondary {
+  padding: 10px 20px;
+  background: #2d2d2d;
+  border: 1px solid #444;
+  border-radius: 8px;
+  color: #b0b0b0;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-secondary:hover {
+  background: #333;
+  color: #fff;
+}
+
 .btn-primary {
   background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
   color: white;
@@ -174,15 +400,6 @@
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
-}
-
-.btn-secondary {
-  background: #333;
-  color: white;
-}
-
-.btn-secondary:hover {
-  background: #444;
 }
 
 /* ========== 右侧内容区 ========== */
@@ -860,3 +1077,4 @@
     font-size: 14px;
   }
 }
+

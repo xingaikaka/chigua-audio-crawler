@@ -37,10 +37,32 @@ async function loadCategories() {
   
   try {
     const siteId = window.currentState.currentSiteId || '51chigua';
+    
+    // YouTube 站点特殊处理：不显示分类导航，直接加载默认内容
+    if (siteId === 'youtube') {
+      console.log('[Renderer] YouTube 站点，隐藏分类导航');
+      const categoryNav = document.getElementById('categoryNav');
+      if (categoryNav) {
+        categoryNav.style.display = 'none';
+      }
+      
+      // 直接加载默认视频
+      await loadYouTubeDefaultContent();
+      return;
+    }
+    
+    // 其他站点正常加载分类
     const result = await window.electronAPI.getCategories(siteId);
     
     if (result.success) {
       window.currentState.categories = result.data;
+      
+      // 确保分类导航可见
+      const categoryNav = document.getElementById('categoryNav');
+      if (categoryNav) {
+        categoryNav.style.display = 'block';
+      }
+      
       renderCategories(result.data);
       console.log('[Renderer] 分类加载成功:', result.data.length, '个分类');
     } else {
@@ -52,6 +74,7 @@ async function loadCategories() {
     
     // 显示错误状态
     const navContainer = document.querySelector('.nav-container');
+    if (navContainer) {
     navContainer.innerHTML = `
       <div class="empty-state">
         <p>加载分类失败</p>
@@ -60,6 +83,72 @@ async function loadCategories() {
     `;
   }
 }
+}
+
+// 加载 YouTube 默认内容
+async function loadYouTubeDefaultContent() {
+  console.log('[Renderer] 加载 YouTube 默认内容');
+  
+  try {
+    showLoading();
+    
+    // 获取站点配置
+    const configResult = await window.electronAPI.getSiteConfig('youtube');
+    
+    if (configResult.success && window.currentState.currentRenderer) {
+      // 将配置传递给渲染器
+      window.currentState.currentRenderer.setConfig(configResult.data);
+    }
+    
+    // 加载默认视频（音乐分类）
+    const result = await window.electronAPI.getContent('youtube', '/search', 1, {
+      categoryKeyword: 'music'
+    });
+    
+    console.log('[Renderer] YouTube API 返回结果:', result);
+    
+    if (result.success) {
+      // 安全地获取 items 数组和分页信息
+      const items = (result.data && result.data.items) ? result.data.items : [];
+      const pagination = (result.data && result.data.pagination) ? result.data.pagination : {};
+      console.log('[Renderer] YouTube 默认内容加载成功:', items.length, '个视频');
+      console.log('[Renderer] 分页信息:', pagination);
+      
+      if (window.currentState.currentRenderer) {
+        // 传递完整的 pagination 数据
+        await window.currentState.currentRenderer.renderContentList(items, pagination);
+      }
+      
+      // 隐藏分页（YouTube 不需要传统分页）
+      const paginationContainer = document.getElementById('paginationContainer');
+      if (paginationContainer) {
+        paginationContainer.style.display = 'none';
+      }
+    } else {
+      throw new Error(result.error || '加载失败');
+    }
+    
+    hideLoading();
+  } catch (error) {
+    console.error('[Renderer] 加载 YouTube 默认内容失败:', error);
+    hideLoading();
+    showToast('加载视频失败: ' + error.message, 'error');
+    
+    // 显示错误提示
+    const contentList = document.getElementById('contentList');
+    if (contentList) {
+      contentList.innerHTML = `
+        <div class="empty-state">
+          <p>加载视频失败</p>
+          <button onclick="loadYouTubeDefaultContent()" style="margin-top: 10px; padding: 10px 20px; background: #ff0000; color: white; border: none; border-radius: 8px; cursor: pointer;">重试</button>
+        </div>
+      `;
+    }
+  }
+}
+
+// 暴露给全局
+window.loadYouTubeDefaultContent = loadYouTubeDefaultContent;
 
 // 重新加载分类（用于站点切换）
 window.reloadCategories = async function() {
