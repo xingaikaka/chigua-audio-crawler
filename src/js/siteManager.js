@@ -151,6 +151,16 @@ class SiteManager {
         console.error('[SiteManager] ✗ window.YouTubeRenderer 不存在！');
         window.currentState.currentRenderer = null;
       }
+    } else if (site.id === 't66y' || site.rendererType === 't66y') {
+      // 草榴社区使用专用渲染器
+      console.log('[SiteManager] >>> 创建 T66YRenderer');
+      if (window.T66YRenderer) {
+        window.currentState.currentRenderer = new window.T66YRenderer();
+        console.log('[SiteManager] ✓ T66YRenderer 创建成功');
+      } else {
+        console.error('[SiteManager] ✗ window.T66YRenderer 不存在！');
+        window.currentState.currentRenderer = null;
+      }
     } else {
       // 默认使用卡片渲染器（原51吃瓜的渲染方式）
       console.log('[SiteManager] 使用默认渲染器 (51吃瓜)');

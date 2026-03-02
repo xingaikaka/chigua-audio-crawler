@@ -124,7 +124,7 @@ function renderCategories(categories) {
 }
 
 // 渲染内容列表
-async function renderContentList(items) {
+async function renderContentList(items, pagination) {
   console.log('\n╔══════════════════════════════════════════════════════════╗');
   console.log('║         [UI] renderContentList 被调用                  ║');
   console.log('╚══════════════════════════════════════════════════════════╝');
@@ -139,7 +139,7 @@ async function renderContentList(items) {
   if (window.currentState.currentRenderer) {
     console.log('[UI] ✓ 使用自定义渲染器:', window.currentState.currentRenderer.constructor.name);
     console.log('[UI] >>> 调用 renderer.renderContentList...');
-    window.currentState.currentRenderer.renderContentList(items);
+    window.currentState.currentRenderer.renderContentList(items, pagination);
     console.log('[UI] <<< renderer.renderContentList 返回');
   } else {
     console.log('[UI] ✓ 使用默认渲染器 (51吃瓜)');

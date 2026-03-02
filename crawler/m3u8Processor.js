@@ -615,9 +615,14 @@ class M3U8Processor {
   /**
    * 处理MP4视频（直接下载并上传）
    */
-  async processMp4(mp4Url, progressCallback = null) {
+  async processMp4(mp4Url, progressCallback = null, ext = null) {
+    // 根据 URL 自动推断扩展名和 MIME 类型
+    const extMap = { mov: 'video/quicktime', mp4: 'video/mp4', webm: 'video/webm', flv: 'video/x-flv', mkv: 'video/x-matroska' };
+    const detectedExt = ext || (mp4Url.match(/\.(mp4|mov|webm|flv|mkv)/i) || [])[1]?.toLowerCase() || 'mp4';
+    const mimeType = extMap[detectedExt] || 'video/mp4';
+
     try {
-      console.log(`   [MP4] 下载视频: ${mp4Url.substring(0, 80)}...`);
+      console.log(`   [MP4] 下载视频(${detectedExt}): ${mp4Url.substring(0, 80)}...`);
       
       if (progressCallback) {
         progressCallback('downloading_video', 0, 100);
@@ -631,15 +636,15 @@ class M3U8Processor {
       
       console.log(`   [MP4] ✅ 视频下载完成: ${(videoData.length / 1024 / 1024).toFixed(2)} MB`);
       
-      // 上传到R2（视频路径格式：videos/... 而不是 uploads/videos/...）
-      const filename = `videos/${this.articleId}/video.mp4`;
+      // 使用 subfolder 区分多个视频，避免文件名冲突
+      const filename = `${this.videoBaseDir}/${this.subfolder}/video.${detectedExt}`;
       console.log(`   [MP4] 📤 上传视频到R2: ${filename}`);
       
       if (progressCallback) {
         progressCallback('uploading_video', 0, 100);
       }
       
-      const uploadResult = await this.r2Uploader.uploadVideoFile(videoData, filename, 'video/mp4');
+      const uploadResult = await this.r2Uploader.uploadVideoFile(videoData, filename, mimeType);
       
       console.log(`   [MP4]   上传结果:`, JSON.stringify(uploadResult, null, 2));
       

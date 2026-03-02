@@ -55,7 +55,27 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openDetailWindow: (url, title) => ipcRenderer.send('open-detail-window', { url, title }),
   
   // 打开外部链接
-  openExternal: (url) => ipcRenderer.invoke('open-external', url)
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
+
+  // 草榴社区 (t66y) 同步
+  t66yGetThreadDetail: (url, maxImages) => ipcRenderer.invoke('t66y-get-thread-detail', { url, maxImages }),
+  t66yStartSync: (items) => ipcRenderer.invoke('t66y-start-sync', { items }),
+  t66yGetQueueStats: () => ipcRenderer.invoke('t66y-get-queue-stats'),
+  t66yStopSync: () => ipcRenderer.invoke('t66y-stop-sync'),
+
+  // 草榴同步进度监听
+  onT66YSyncProgress: (callback) => {
+    ipcRenderer.on('t66y-sync-progress', (event, data) => callback(data));
+  },
+  onT66YSyncCompleted: (callback) => {
+    ipcRenderer.on('t66y-sync-completed', (event, data) => callback(data));
+  },
+  onT66YSyncError: (callback) => {
+    ipcRenderer.on('t66y-sync-error', (event, data) => callback(data));
+  },
+  onT66YSyncSkipped: (callback) => {
+    ipcRenderer.on('t66y-sync-skipped', (event, data) => callback(data));
+  }
 });
 
 console.log('[Preload] 预加载脚本已执行');

@@ -43,6 +43,17 @@
       "crawlerModule": "youtube",
       "rendererType": "grid",
       "enabled": true
+    },
+    {
+      "id": "t66y",
+      "name": "草榴社区",
+      "icon": "🌿",
+      "type": "image-text",
+      "description": "草榴社区帖子爬取与同步",
+      "configFile": "t66y.json",
+      "crawlerModule": "t66y",
+      "rendererType": "t66y",
+      "enabled": true
     }
   ],
   "defaultSite": "51chigua"

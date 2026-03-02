@@ -28,6 +28,9 @@ class CrawlerFactory {
         case 'youtube':
           return this.createYouTubeCrawler(siteConfig);
         
+        case 't66y':
+          return this.createT66YCrawler(siteConfig);
+        
         default:
           throw new Error(`未知的爬虫模块: ${crawlerModule}`);
       }
@@ -125,6 +128,29 @@ class CrawlerFactory {
         
         // 默认返回热门视频
         return await parser.getTrending('music', page);
+      }
+    };
+  }
+  /**
+   * 创建草榴社区爬虫实例
+   */
+  static createT66YCrawler(config) {
+    const { getCategories, getThreadList } = require('../t66y/t66yListParser');
+
+    return {
+      type: 't66y',
+      config: config,
+
+      getCategories: async () => {
+        console.log('[T66YCrawler] 获取分类列表');
+        const categories = await getCategories();
+        return categories;
+      },
+
+      getContent: async (categoryUrl, page, options = {}) => {
+        console.log('[T66YCrawler] 获取帖子列表:', categoryUrl, 'page:', page);
+        const url = categoryUrl || config.defaultListUrl || 'https://t66y.com/thread0806.php?fid=7';
+        return await getThreadList(url, page);
       }
     };
   }

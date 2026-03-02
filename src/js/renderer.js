@@ -207,12 +207,22 @@ window.handleCategoryClick = async function(categoryUrl, categoryName) {
     const result = await window.electronAPI.getContent(siteId, categoryUrl, 1);
     
     if (result.success) {
-      await renderContentList(result.data.items);
-      renderPagination(result.data.pagination);
-      
+      const pagination = result.data.pagination;
+      await renderContentList(result.data.items, pagination);
+
+      // t66y 使用内置分页，隐藏主界面分页
+      if (siteId === 't66y') {
+        const paginationContainer = document.getElementById('paginationContainer');
+        if (paginationContainer) paginationContainer.style.display = 'none';
+        const toolbarContainer = document.getElementById('toolbarContainer');
+        if (toolbarContainer) toolbarContainer.style.display = 'none';
+      } else {
+        renderPagination(pagination);
+      }
+
       // 更新分页状态
-      window.currentState.pagination = result.data.pagination;
-      
+      window.currentState.pagination = pagination;
+
       showToast(`已切换到: ${categoryName}`, 'success');
     } else {
       throw new Error(result.error);

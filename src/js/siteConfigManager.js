@@ -87,6 +87,8 @@ class SiteConfigManager {
       container.innerHTML = this.render51ChiguaConfig(config);
     } else if (siteId === 'uaa') {
       container.innerHTML = this.renderUaaConfig(config);
+    } else if (siteId === 't66y') {
+      container.innerHTML = this.renderT66YConfig(config);
     } else {
       container.innerHTML = '<p class="empty-hint">该站点暂无可配置项</p>';
     }
@@ -215,6 +217,96 @@ class SiteConfigManager {
         <div class="config-item">
           <label>User Agent</label>
           <textarea id="config_userAgent" rows="2">${config.userAgent || ''}</textarea>
+        </div>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div class="config-actions">
+        <button class="btn-primary" id="saveConfigBtn">💾 保存配置</button>
+      </div>
+    `;
+  }
+
+  /**
+   * 渲染草榴社区(t66y)配置
+   */
+  renderT66YConfig(config) {
+    return `
+      <div class="config-section">
+        <h3>🔗 API配置</h3>
+        <div class="config-item">
+          <label>同步API地址</label>
+          <input type="text" id="config_apiBaseUrl" value="${config.apiBaseUrl || ''}" 
+                 placeholder="http://47.239.212.188:8880">
+        </div>
+        <div class="config-item">
+          <label>用户UID</label>
+          <input type="text" id="config_syncUid" value="${config.syncUid || ''}" 
+                 placeholder="1765988676000011375">
+        </div>
+        <div class="config-item">
+          <label>角色代码</label>
+          <input type="text" id="config_roleCode" value="${config.roleCode || 'jianzhi'}">
+        </div>
+        <div class="config-item">
+          <label>认证UUID</label>
+          <input type="text" id="config_authUuid" value="${config.authUuid || ''}" 
+                 placeholder="dd7d5b1b9f1348ec58eb3a1b884b93a2">
+        </div>
+        <div class="config-item">
+          <label>爬虫Token</label>
+          <input type="password" id="config_crawlerToken" value="${config.crawlerToken || ''}" 
+                 placeholder="UQ8k7P2nV6cXr9T1mK5Zs3YpH8dN4bJ0qL2vW7eA">
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h3>☁️ R2存储配置</h3>
+        <div class="config-item">
+          <label>R2 Worker URL</label>
+          <input type="text" id="config_r2WorkerUrl" value="${config.r2WorkerUrl || ''}" 
+                 placeholder="https://khjghjghjjh.xyz/upload">
+        </div>
+        <div class="config-item">
+          <label>R2预览域名</label>
+          <input type="text" id="config_r2PreviewDomain" value="${config.r2PreviewDomain || ''}" 
+                 placeholder="https://khjghjghjjh.xyz">
+        </div>
+        <div class="config-item">
+          <label>图片加密Key</label>
+          <input type="password" id="config_r2ImageEncryptionKey" value="${config.r2ImageEncryptionKey || ''}" 
+                 placeholder="cYC8lOMnoUnqzeFhYcGCoLqNa44k9RMfmoorxeS7vIo=">
+        </div>
+        <div class="config-item">
+          <label>图片加密IV</label>
+          <input type="password" id="config_r2ImageEncryptionIV" value="${config.r2ImageEncryptionIV || ''}" 
+                 placeholder="E9s7nMx5bH1jF3kC6vD2rP8qT4wZ0yL9">
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h3>🖼️ 水印配置</h3>
+        <p class="config-hint">最多可上传 3 张水印图片，勾选「启用」的水印会叠加到同步图片上（仅 JPEG/PNG 格式生效）。保存后下次打开可继续使用。</p>
+        <input type="file" id="watermarkFileInput" accept="image/*" style="display: none;">
+        <div class="watermark-upload-area" id="watermarkUploadArea">
+          <button type="button" class="btn-watermark-upload" id="watermarkUploadBtn">
+            📤 上传水印图片
+          </button>
+        </div>
+        <div class="watermark-cards" id="watermarkCardsContainer">
+          ${this.renderWatermarkCards(config.watermarks || [])}
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h3>⚙️ 其他配置</h3>
+        <div class="config-item">
+          <label>每页数量</label>
+          <input type="number" id="config_pageSize" value="${config.pageSize || 50}" min="1" max="100">
+        </div>
+        <div class="config-item">
+          <label>最大并发数</label>
+          <input type="number" id="config_maxConcurrent" value="${config.maxConcurrent || 2}" min="1" max="10">
         </div>
       </div>
 
@@ -603,8 +695,8 @@ class SiteConfigManager {
       // 收集表单数据
       const updatedConfig = { ...this.currentConfig };
       
-      // 51吃瓜站点：收集水印配置（含未启用的，全部持久化存储）
-      if (this.currentSiteId === '51chigua') {
+      // 51吃瓜 / 草榴社区：收集水印配置（含未启用的，全部持久化存储）
+      if (this.currentSiteId === '51chigua' || this.currentSiteId === 't66y') {
         updatedConfig.watermarks = this.collectAllWatermarkConfig();
       }
 

@@ -760,6 +760,97 @@ ipcMain.handle('uaa-stop-sync', async (event) => {
 
 // ============ End of UAA 同步相关 IPC ============
 
+// ============ 草榴社区 (t66y) 同步相关 IPC ============
+
+let t66yTaskQueue = null;
+
+// IPC处理：获取草榴帖子详情（含图片）
+ipcMain.handle('t66y-get-thread-detail', async (event, { url, maxImages }) => {
+  try {
+    console.log('[Main] 获取草榴帖子详情:', url);
+    const { getThreadDetail } = require('../crawler/t66y/t66yListParser');
+    const detail = await getThreadDetail(url, maxImages || 12);
+    return { success: true, data: detail };
+  } catch (error) {
+    console.error('[Main] 获取草榴帖子详情失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// IPC处理：开始草榴同步
+ipcMain.handle('t66y-start-sync', async (event, { items }) => {
+  try {
+    console.log('[Main] 开始草榴社区同步:', items.length, '条');
+
+    const t66yConfig = loadSiteConfig('t66y');
+    const T66YTaskQueue = require('../crawler/t66y/t66yTaskQueue');
+
+    t66yTaskQueue = new T66YTaskQueue(t66yConfig);
+
+    t66yTaskQueue.onProgress((progressData) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('t66y-sync-progress', progressData);
+      }
+    });
+
+    const addResult = await t66yTaskQueue.addTasks(items);
+    console.log('[Main] 草榴任务添加完成:', addResult);
+
+    if (addResult.skippedItems && addResult.skippedItems.length > 0) {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('t66y-sync-skipped', {
+          skippedItems: addResult.skippedItems
+        });
+      }
+    }
+
+    t66yTaskQueue.start().then(() => {
+      console.log('[Main] 草榴同步队列执行完成');
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('t66y-sync-completed', {
+          stats: t66yTaskQueue.getStats()
+        });
+      }
+    }).catch((error) => {
+      console.error('[Main] 草榴同步队列执行失败:', error);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('t66y-sync-error', { error: error.message });
+      }
+    });
+
+    return {
+      success: true,
+      stats: t66yTaskQueue.getStats(),
+      addResult
+    };
+  } catch (error) {
+    console.error('[Main] 草榴启动同步失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// IPC处理：获取草榴队列统计
+ipcMain.handle('t66y-get-queue-stats', async () => {
+  try {
+    if (!t66yTaskQueue) return { success: true, stats: null };
+    return { success: true, stats: t66yTaskQueue.getStats() };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// IPC处理：停止草榴同步
+ipcMain.handle('t66y-stop-sync', async () => {
+  try {
+    if (t66yTaskQueue) t66yTaskQueue.stop();
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// ============ End of 草榴社区同步相关 IPC ============
+
 // 错误处理
 process.on('uncaughtException', (error) => {
   console.error('[Main] 未捕获的异常:', error);

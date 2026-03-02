@@ -10,9 +10,9 @@ function renderContentListWithCheckbox(items) {
   const contentList = document.getElementById('contentList');
   const toolbarContainer = document.getElementById('toolbarContainer');
   
-  // 为51吃瓜添加专属类名，避免样式冲突
-  contentList.classList.add('chigua-site');
-  contentList.classList.remove('uaa-site');
+  // 为51吃瓜恢复正确的类名和布局，移除其他站点的类
+  contentList.classList.remove('uaa-site', 'youtube-site', 'video-list-container', 'audio-list-container');
+  contentList.classList.add('content-list', 'chigua-site');
   
   if (!items || items.length === 0) {
     contentList.innerHTML = '<div class="empty-state"><p>没有找到内容</p></div>';
