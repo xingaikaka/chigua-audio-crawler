@@ -687,17 +687,28 @@ class UAAAudioRenderer {
     // 如果是任务进度更新，更新对应卡片的进度
     if (data.taskId || data.data?.taskId) {
       const taskId = data.taskId || data.data?.taskId;
+      const status = data.status || data.data?.status;
+      const errorMsg = data.details?.error || data.data?.details?.error || data.error || data.data?.error;
+      const title = data.details?.title || data.data?.details?.title || '';
+      
       const progressData = {
-        status: data.status || data.data?.status,
+        status,
         step: data.step || data.data?.step,
         progress: data.progress || data.data?.progress || 0,
-        error: data.error || data.data?.error,
-        details: data.details || data.data?.details, // 传递details（包含novelId）
-        novelId: data.details?.novelId || data.data?.details?.novelId // 直接提取novelId
+        error: errorMsg,
+        details: data.details || data.data?.details,
+        novelId: data.details?.novelId || data.data?.details?.novelId
       };
       
       // 更新卡片底部进度
       this.updateCardSyncProgress(taskId, progressData);
+      
+      // 任务失败时弹出 toast 通知
+      if (status === 'failed') {
+        const displayTitle = title || taskId;
+        const displayError = errorMsg || '同步失败';
+        showToast(`❌ ${displayTitle}：${displayError}`, 'error');
+      }
     }
     
     // 如果是队列统计更新，可以在控制台输出或工具栏显示总体进度

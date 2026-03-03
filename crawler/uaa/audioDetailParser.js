@@ -85,23 +85,38 @@ async function getAudioDetail(audioId, detailUrl) {
     
     // 情况1: 有章节列表，且提取到了audio标签的真实URL
     if (detail.episodes.length > 0 && detail.audioUrls.length > 0) {
-      // ✅ 对于单集（只有1个章节），用audio标签的真实URL替换构造的URL
+      // ✅ 单集：直接用audio标签的真实URL替换构造的URL
       if (detail.episodes.length === 1) {
         const realAudioUrl = detail.audioUrls[0];
         const constructedUrl = detail.episodes[0].audioUrl;
         
-        // 如果两个URL不同，说明构造的URL可能不正确，用真实URL替换
         if (realAudioUrl !== constructedUrl) {
           console.log(`[UAA-AudioDetailParser] 🔄 单集检测到URL不一致，使用真实URL`);
           console.log(`[UAA-AudioDetailParser]   构造的URL: ${constructedUrl}`);
           console.log(`[UAA-AudioDetailParser]   真实URL: ${realAudioUrl}`);
-          detail.episodes[0].audioUrl = realAudioUrl;  // ✅ 替换为真实URL
+          detail.episodes[0].audioUrl = realAudioUrl;
         }
       }
-      // 对于多集，从第一个章节补充audioUrls（如果需要）
-      else if (detail.audioUrls.length === 0 && detail.episodes[0].audioUrl) {
-        detail.audioUrls.push(detail.episodes[0].audioUrl);
-        console.log(`[UAA-AudioDetailParser] 从章节列表补充audioUrls: ${detail.audioUrls[0]}`);
+      // ✅ 多集：从audio标签真实URL中提取日期目录，修正所有章节的URL
+      // 真实URL格式: https://cdn.uameta.ai/file/bucket-media/audio/{dateDir}/{index}.mp3
+      // 构造URL格式（错误）: https://cdn.uameta.ai/file/bucket-media/audio/{chapterId}.mp3
+      else {
+        const realAudioUrl = detail.audioUrls[0];
+        const dateDirMatch = realAudioUrl.match(/\/audio\/(\d+)\/\d+\.mp3/);
+        
+        if (dateDirMatch) {
+          const dateDir = dateDirMatch[1];
+          console.log(`[UAA-AudioDetailParser] 🔄 多集URL修正: 提取到日期目录 "${dateDir}"，重构所有章节URL`);
+          
+          detail.episodes.forEach((episode, index) => {
+            const correctUrl = `https://cdn.uameta.ai/file/bucket-media/audio/${dateDir}/${index + 1}.mp3`;
+            console.log(`[UAA-AudioDetailParser]   章节 ${index + 1}: ${episode.audioUrl} → ${correctUrl}`);
+            episode.audioUrl = correctUrl;
+          });
+        } else {
+          console.warn(`[UAA-AudioDetailParser] ⚠️ 多集：无法从真实URL解析日期目录，章节URL可能不正确`);
+          console.warn(`[UAA-AudioDetailParser]   真实URL: ${realAudioUrl}`);
+        }
       }
     }
     

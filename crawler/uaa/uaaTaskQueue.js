@@ -243,6 +243,15 @@ class UaaTaskQueue {
         error: error.message
       });
       
+      // 向渲染进程发送任务失败通知，使卡片显示失败状态
+      this._handleTaskProgress({
+        taskId: task.id,
+        status: TaskStatus.FAILED,
+        step: '同步失败',
+        progress: 0,
+        details: { error: error.message, title: task.item.title }
+      });
+      
       // ✅ 失败时也要释放锁
       if (this.syncLocks.has(audioId)) {
         const lockPromise = this.syncLocks.get(audioId);

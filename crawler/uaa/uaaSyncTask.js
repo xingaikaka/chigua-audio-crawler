@@ -217,7 +217,7 @@ class UaaSyncTask {
         throw new Error('没有章节也没有音频URL，无法同步');
       }
       
-      // ✅ 关键：验证第一个章节的音频是否可下载
+      // ✅ 关键：验证第一个章节的音频是否可访问（使用 HEAD 请求，不下载整个文件）
       const firstEpisode = episodes[0];
       const firstAudioUrl = firstEpisode.audioUrl;
       
@@ -225,14 +225,36 @@ class UaaSyncTask {
         throw new Error('第一个章节没有音频URL');
       }
       
-      console.log(`[UAA-Task ${this.id}]   测试下载: ${firstAudioUrl}`);
+      const MAX_AUDIO_SIZE = 99 * 1024 * 1024; // 99 MB，Cloudflare Worker 上传限制
+      
+      console.log(`[UAA-Task ${this.id}]   验证音频可访问性: ${firstAudioUrl}`);
       try {
-        const audioDownloader = new AudioDownloader(this.config);
-        const testBuffer = await audioDownloader.downloadAudio(firstAudioUrl, () => {});
-        console.log(`[UAA-Task ${this.id}]   ✅ 音频验证成功 (${(testBuffer.length / 1024 / 1024).toFixed(2)} MB)`);
+        const audioChecker = new AudioDownloader(this.config);
+        const checkResult = await audioChecker.checkAudioAccessible(firstAudioUrl);
+        
+        if (!checkResult.accessible) {
+          throw new Error(checkResult.error || 'URL 不可访问');
+        }
+        
+        const sizeInfo = checkResult.contentLength != null
+          ? `${(checkResult.contentLength / 1024 / 1024).toFixed(2)} MB`
+          : '大小未知';
+        
+        // 文件超过 99MB，无法上传到 Cloudflare Worker，跳过整条数据
+        if (checkResult.contentLength && checkResult.contentLength > MAX_AUDIO_SIZE) {
+          const errorMsg = `音频文件过大 (${sizeInfo})，超过 99MB 上传限制，跳过同步`;
+          console.warn(`[UAA-Task ${this.id}]   ⚠️ ${errorMsg}`);
+          this.updateProgress('文件过大，跳过', 0, { error: errorMsg });
+          throw new Error(errorMsg);
+        }
+        
+        console.log(`[UAA-Task ${this.id}]   ✅ 音频验证成功 (${sizeInfo})`);
       } catch (error) {
-        const errorMsg = `音频不可用，取消同步: ${error.message}`;
+        const errorMsg = error.message.startsWith('音频文件过大')
+          ? error.message
+          : `音频验证失败，跳过同步: ${error.message}`;
         console.error(`[UAA-Task ${this.id}]   ❌ ${errorMsg}`);
+        this.updateProgress('音频验证失败', 0, { error: errorMsg });
         throw new Error(errorMsg);
       }
       
@@ -360,7 +382,22 @@ class UaaSyncTask {
             continue;
           }
           
-          // 5b: 下载音频
+          // 5b: 下载前检查文件大小，超过 99MB 跳过该章节
+          console.log(`[UAA-Task ${this.id}]   检查音频文件大小...`);
+          const sizeCheck = await audioDownloader.checkAudioAccessible(audioUrl);
+          if (sizeCheck.accessible && sizeCheck.contentLength && sizeCheck.contentLength > MAX_AUDIO_SIZE) {
+            const sizeMB = (sizeCheck.contentLength / 1024 / 1024).toFixed(2);
+            console.warn(`[UAA-Task ${this.id}]   ⚠️ 章节 ${chapterNum} 文件过大 (${sizeMB} MB)，超过 99MB 限制，跳过`);
+            failCount++;
+            continue;
+          }
+          if (!sizeCheck.accessible) {
+            console.warn(`[UAA-Task ${this.id}]   ⚠️ 章节 ${chapterNum} 音频不可访问 (${sizeCheck.error})，跳过`);
+            failCount++;
+            continue;
+          }
+          
+          // 5c: 下载音频
           console.log(`[UAA-Task ${this.id}]   下载音频...`);
           const audioBuffer = await audioDownloader.downloadAudio(
             audioUrl,
@@ -372,7 +409,7 @@ class UaaSyncTask {
             }
           );
           
-          // 5c: 上传到R2
+          // 5d: 上传到R2
           const audioR2Path = generateChapterPath(audioId, chapterNum);
           console.log(`[UAA-Task ${this.id}]   上传音频到R2: ${audioR2Path}`);
           
@@ -385,7 +422,7 @@ class UaaSyncTask {
           const audioResourceKey = audioUploadResult.resource_key;
           console.log(`[UAA-Task ${this.id}]   音频上传成功: ${audioResourceKey}`);
           
-          // 5d: 同步章节数据
+          // 5e: 同步章节数据
           const chapterData = mapChapterData(novelId, episode, chapterNum, audioResourceKey);
           console.log(`[UAA-Task ${this.id}]   同步章节数据到服务器...`);
           
@@ -458,6 +495,17 @@ class UaaSyncTask {
         error: error.message,
         title: this.item.title
       };
+      
+      // 通知 UI 该任务已失败（确保卡片显示失败状态）
+      if (this.onProgress) {
+        this.onProgress({
+          taskId: this.id,
+          status: TaskStatus.FAILED,
+          step: '同步失败',
+          progress: 0,
+          details: { error: error.message }
+        });
+      }
       
       throw error;
     }

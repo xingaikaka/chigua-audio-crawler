@@ -201,6 +201,94 @@ class AudioDownloader {
   }
   
   /**
+   * 验证音频URL是否可访问（使用 HEAD 或 Range 请求，不下载整个文件）
+   * @param {string} url - 音频URL
+   * @returns {Promise<{ accessible: boolean, contentLength: number|null, error: string|null }>}
+   */
+  async checkAudioAccessible(url) {
+    console.log(`[AudioDownloader] 验证音频可访问性: ${url}`);
+
+    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+      try {
+        const result = await this._headRequest(url);
+        console.log(`[AudioDownloader] 验证成功: 状态=${result.status}, 大小=${result.contentLength != null ? (result.contentLength / 1024 / 1024).toFixed(2) + ' MB' : '未知'}`);
+        return result;
+      } catch (error) {
+        console.error(`[AudioDownloader] 验证失败 (尝试 ${attempt}/${this.maxRetries}):`, error.message);
+        if (attempt < this.maxRetries) {
+          await this.sleep(this.retryDelay);
+        } else {
+          return { accessible: false, contentLength: null, error: error.message };
+        }
+      }
+    }
+  }
+
+  /**
+   * 发送 HEAD 请求，若服务器不支持则回退到 Range 请求（只取前 1024 字节）
+   */
+  _headRequest(url) {
+    return new Promise((resolve, reject) => {
+      const urlObj = new URL(url);
+      const protocol = urlObj.protocol === 'https:' ? require('https') : require('http');
+
+      const doRequest = (method, extraHeaders = {}) => {
+        const options = {
+          hostname: urlObj.hostname,
+          port: urlObj.port,
+          path: urlObj.pathname + urlObj.search,
+          method,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+            'Accept': '*/*',
+            'Referer': `${urlObj.protocol}//${urlObj.hostname}/`,
+            ...extraHeaders
+          },
+          timeout: 15000
+        };
+
+        const req = protocol.request(options, (res) => {
+          // 处理重定向
+          if (res.statusCode === 301 || res.statusCode === 302) {
+            const redirectUrl = res.headers.location;
+            console.log(`[AudioDownloader] HEAD 重定向: ${redirectUrl}`);
+            res.resume();
+            this._headRequest(redirectUrl).then(resolve).catch(reject);
+            return;
+          }
+
+          // HEAD 请求返回 405/501 时，改用 Range 请求
+          if (method === 'HEAD' && (res.statusCode === 405 || res.statusCode === 501)) {
+            console.log(`[AudioDownloader] HEAD 不支持，改用 Range 请求`);
+            res.resume();
+            doRequest('GET', { 'Range': 'bytes=0-1023' });
+            return;
+          }
+
+          // 206 Partial Content 或 200 OK 均视为可访问
+          if (res.statusCode === 200 || res.statusCode === 206) {
+            const contentLength = res.headers['content-range']
+              ? parseInt(res.headers['content-range'].split('/')[1]) || null
+              : parseInt(res.headers['content-length']) || null;
+
+            res.resume(); // 丢弃响应体
+            resolve({ accessible: true, contentLength, error: null, status: res.statusCode });
+          } else {
+            res.resume();
+            reject(new Error(`HTTP ${res.statusCode}`));
+          }
+        });
+
+        req.on('error', (err) => reject(new Error(`请求错误: ${err.message}`)));
+        req.on('timeout', () => { req.destroy(); reject(new Error('验证超时')); });
+        req.end();
+      };
+
+      doRequest('HEAD');
+    });
+  }
+
+  /**
    * 延时函数
    */
   sleep(ms) {
